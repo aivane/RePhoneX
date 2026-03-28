@@ -103,25 +103,22 @@ export const useAuctionStore = defineStore('auction', () => {
       for (let i = 0; i < numProductsToTick; i++) {
         const randomProduct = products.value[Math.floor(Math.random() * products.value.length)]
         
-        // 50% chance they actually bid to make it look organic
-        if (Math.random() > 0.5) {
-          const randomBot = botNames[Math.floor(Math.random() * botNames.length)]
-          
-          // Don't bid against yourself
-          if (randomProduct.leadingBidder !== randomBot && randomProduct.leadingBidder !== 'You') {
-             const botIncrement = Math.floor(Math.random() * 21) + 5
-             placeBid(randomProduct.id, randomBot, randomProduct.activePrice + botIncrement, false)
-          } else if (randomProduct.leadingBidder === 'Start Price' || randomProduct.leadingBidder === 'You') {
-             // Aggressive bidding on fresh items or trying to beat the human player
-             const randomBot2 = botNames[Math.floor(Math.random() * botNames.length)]
-             const botIncrement = Math.floor(Math.random() * 15) + 10
-             placeBid(randomProduct.id, randomBot2, randomProduct.activePrice + botIncrement, false)
-          }
+        const randomBot = botNames[Math.floor(Math.random() * botNames.length)]
+        
+        // Don't bid against yourself
+        if (randomProduct.leadingBidder !== randomBot && randomProduct.leadingBidder !== 'You') {
+           const botIncrement = Math.floor(Math.random() * 21) + 5
+           placeBid(randomProduct.id, randomBot, randomProduct.activePrice + botIncrement, false)
+        } else if (randomProduct.leadingBidder === 'Start Price' || randomProduct.leadingBidder === 'You') {
+           // Aggressive bidding on fresh items or trying to beat the human player
+           const randomBot2 = botNames[Math.floor(Math.random() * botNames.length)]
+           const botIncrement = Math.floor(Math.random() * 15) + 10
+           placeBid(randomProduct.id, randomBot2, randomProduct.activePrice + botIncrement, false)
         }
       }
 
-      // Dynamic ticking: Next burst 1.5s to 4s away
-      setTimeout(simulateTick, Math.floor(Math.random() * 2500) + 1500)
+      // Consistent ticking: Exactly 5 seconds
+      setTimeout(simulateTick, 5000)
     }
 
     // Start engine
