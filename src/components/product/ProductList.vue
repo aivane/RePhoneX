@@ -15,8 +15,6 @@
           <div v-if="product.status === 'hot'" class="absolute top-3 left-3 bg-red-600/90 text-white text-xs font-bold px-2 py-1 rounded-md animate-pulse z-10 shadow-lg border border-red-500">
             🔥 Live Bid!
           </div>
-
-          <img :src="product.imageUrl || 'https://via.placeholder.com/300x200?text=Premium+Phone'" alt="Phone" class="w-full h-48 object-cover group-hover:opacity-90 transition-opacity">
           
           <div class="p-5">
             <h3 class="text-lg font-bold text-gray-800">{{ product.brand }} {{ product.model }}</h3>

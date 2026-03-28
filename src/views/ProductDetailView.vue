@@ -17,12 +17,9 @@
       </nav>
 
       <div v-if="product" class="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
-        <!-- Product Image & Details -->
-        <div class="flex flex-col">
-          <div class="bg-gray-100 rounded-2xl overflow-hidden aspect-w-4 aspect-h-3 sm:aspect-none sm:h-[400px]">
-             <img :src="product.imageUrl || 'https://via.placeholder.com/600x400?text=Premium+Phone'" alt="Phone" class="w-full h-full object-center object-cover sm:w-full sm:h-full">
-          </div>
-          <div class="mt-8">
+        <!-- Product Details -->
+        <div class="flex flex-col justify-center">
+          <div>
             <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">{{ product.brand }} {{ product.model }}</h1>
             <div class="mt-3">
               <h2 class="sr-only">Product condition</h2>
