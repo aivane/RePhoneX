@@ -1,19 +1,45 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 export const useAuctionStore = defineStore('auction', () => {
-  // Global Mock Database
-  const products = ref([
+  // --- 1. SET UP DEFAULTS ---
+  const defaultProducts = [
     { id: '1', brand: 'Apple', model: 'iPhone 13 Pro', condition: 'Excellent', basePrice: 699, activePrice: 699, leadingBidder: 'Start Price', status: 'available', imageUrl: '' },
     { id: '2', brand: 'Samsung', model: 'Galaxy S22 Ultra', condition: 'Good', basePrice: 550, activePrice: 550, leadingBidder: 'Start Price', status: 'available', imageUrl: '' },
     { id: '3', brand: 'Google', model: 'Pixel 7', condition: 'Like New', basePrice: 400, activePrice: 400, leadingBidder: 'Start Price', status: 'available', imageUrl: '' },
     { id: '4', brand: 'Apple', model: 'iPhone 12', condition: 'Fair', basePrice: 299, activePrice: 299, leadingBidder: 'Start Price', status: 'available', imageUrl: '' }
-  ])
+  ]
 
-  // Bid History Maps (Key=Product ID, Value=Array of Bid Objects)
-  const bidHistories = ref({
+  const defaultHistories = {
     '1': [], '2': [], '3': [], '4': []
-  })
+  }
+
+  // --- 2. HYDRATE FROM LOCAL STORAGE (To survive F5 Refresh) ---
+  const storedState = localStorage.getItem('rephonex_auction_state')
+  let initialProducts = defaultProducts
+  let initialHistories = defaultHistories
+
+  if (storedState) {
+    try {
+      const parsed = JSON.parse(storedState)
+      if (parsed.products) initialProducts = parsed.products
+      if (parsed.bidHistories) initialHistories = parsed.bidHistories
+    } catch(e) { 
+      console.warn("Could not parse saved auction state. Reverting to defaults.") 
+    }
+  }
+
+  // --- 3. INITIALIZE REACTIVE STATE ---
+  const products = ref(initialProducts)
+  const bidHistories = ref(initialHistories)
+  
+  // Save to LocalStorage whenever these arrays mutate
+  watch([products, bidHistories], () => {
+    localStorage.setItem('rephonex_auction_state', JSON.stringify({
+      products: products.value,
+      bidHistories: bidHistories.value
+    }))
+  }, { deep: true })
 
   // Global Engine State
   const simulationActive = ref(false)
@@ -27,7 +53,7 @@ export const useAuctionStore = defineStore('auction', () => {
     return computed(() => bidHistories.value[id] || [])
   }
 
-  // Core action to place a new bid across the entire app
+  // --- 4. CORE ACTIONS ---
   const placeBid = (productId, user, amount, isMine = false) => {
     const product = products.value.find(p => p.id === productId)
     if (!product) return
@@ -64,7 +90,7 @@ export const useAuctionStore = defineStore('auction', () => {
     }, 4000)
   }
 
-  // Global Background Bot Simulation
+  // --- 5. GLOBAL BOT SIMULATION ---
   const startSimulation = () => {
     if (simulationActive.value) return // prevent duplicate intervals
     simulationActive.value = true
@@ -86,7 +112,7 @@ export const useAuctionStore = defineStore('auction', () => {
              const botIncrement = Math.floor(Math.random() * 21) + 5
              placeBid(randomProduct.id, randomBot, randomProduct.activePrice + botIncrement, false)
           } else if (randomProduct.leadingBidder === 'Start Price' || randomProduct.leadingBidder === 'You') {
-             // Aggressive aggressive bidding on fresh items or trying to beat the human player
+             // Aggressive bidding on fresh items or trying to beat the human player
              const randomBot2 = botNames[Math.floor(Math.random() * botNames.length)]
              const botIncrement = Math.floor(Math.random() * 15) + 10
              placeBid(randomProduct.id, randomBot2, randomProduct.activePrice + botIncrement, false)
@@ -106,6 +132,13 @@ export const useAuctionStore = defineStore('auction', () => {
     simulationActive.value = false
   }
 
+  // Helper method to clear the presenter's cache back to default
+  const resetAuctionState = () => {
+    localStorage.removeItem('rephonex_auction_state')
+    products.value = [...defaultProducts]
+    bidHistories.value = { '1': [], '2': [], '3': [], '4': [] }
+  }
+
   return { 
     products, 
     bidHistories, 
@@ -113,6 +146,7 @@ export const useAuctionStore = defineStore('auction', () => {
     getHistoryById, 
     placeBid, 
     startSimulation, 
-    stopSimulation 
+    stopSimulation,
+    resetAuctionState
   }
 })
