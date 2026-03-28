@@ -13,6 +13,12 @@ const router = createRouter({
       path: '/marketplace',
       name: 'marketplace',
       component: () => import('../views/MarketView.vue')
+    },
+    {
+      path: '/product/:id',
+      name: 'product-detail',
+      component: () => import('../views/ProductDetailView.vue'),
+      props: true
     }
   ]
 })

@@ -16,9 +16,9 @@
             <p class="text-sm text-gray-500 mt-1">{{ product.condition }}</p>
             <div class="mt-4 flex justify-between items-center">
               <span class="text-xl font-extrabold text-blue-600">${{ product.price }}</span>
-              <button class="px-3 py-1 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition">
-                Details
-              </button>
+              <router-link :to="{ name: 'product-detail', params: { id: product.id }}" class="px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                Live Auction
+              </router-link>
             </div>
           </div>
         </div>
