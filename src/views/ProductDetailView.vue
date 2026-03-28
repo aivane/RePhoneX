@@ -50,41 +50,22 @@
       
       <div v-else class="text-center py-20">
         <h2 class="text-2xl font-semibold text-gray-500">Retrieving secure auction details...</h2>
+        <router-link to="/marketplace" class="mt-4 text-blue-600 block">Go back to Marketplace</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuctionStore } from '@/stores/auctionStore'
 import BiddingPanel from '../components/product/BiddingPanel.vue'
 
 const route = useRoute()
-const product = ref(null)
+const auctionStore = useAuctionStore()
 
-// Mocking fetch data locally
-const fetchProduct = () => {
-  const mockDb = [
-    { id: '1', brand: 'Apple', model: 'iPhone 13 Pro', condition: 'Excellent', basePrice: 699, imageUrl: '' },
-    { id: '2', brand: 'Samsung', model: 'Galaxy S22 Ultra', condition: 'Good', basePrice: 550, imageUrl: '' },
-    { id: '3', brand: 'Google', model: 'Pixel 7', condition: 'Like New', basePrice: 400, imageUrl: '' },
-    { id: '4', brand: 'Apple', model: 'iPhone 12', condition: 'Fair', basePrice: 299, imageUrl: '' }
-  ]
-  
-  // Simulate network delay
-  setTimeout(() => {
-    const found = mockDb.find(p => p.id === route.params.id)
-    if (found) {
-      product.value = found
-    } else {
-      // fallback generic product if id is not found
-      product.value = { id: route.params.id, brand: 'Premium', model: 'Smartphone', condition: 'Excellent', basePrice: 500, imageUrl: '' }
-    }
-  }, 600)
-}
+// Read product reactively from the Pinia store
+const product = computed(() => auctionStore.products.find(p => p.id === route.params.id))
 
-onMounted(() => {
-  fetchProduct()
-})
 </script>

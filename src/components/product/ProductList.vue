@@ -3,48 +3,54 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Latest Phones</h2>
       
-      <div v-if="loading" class="text-center text-gray-500">
+      <div v-if="auctionStore.products.length === 0" class="text-center text-gray-500">
         Loading marketplace...
       </div>
 
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <!-- Render Products -->
-        <div v-for="product in products" :key="product.id" class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-          <img :src="product.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'" alt="Phone" class="w-full h-48 object-cover">
+        <!-- Render Products from Vue Store -->
+        <div v-for="product in auctionStore.products" :key="product.id" class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative group">
+          
+          <!-- Live Status Badge -->
+          <div v-if="product.status === 'hot'" class="absolute top-3 left-3 bg-red-600/90 text-white text-xs font-bold px-2 py-1 rounded-md animate-pulse z-10 shadow-lg border border-red-500">
+            🔥 Live Bid!
+          </div>
+
+          <img :src="product.imageUrl || 'https://via.placeholder.com/300x200?text=Premium+Phone'" alt="Phone" class="w-full h-48 object-cover group-hover:opacity-90 transition-opacity">
+          
           <div class="p-5">
             <h3 class="text-lg font-bold text-gray-800">{{ product.brand }} {{ product.model }}</h3>
             <p class="text-sm text-gray-500 mt-1">{{ product.condition }}</p>
-            <div class="mt-4 flex justify-between items-center">
-              <span class="text-xl font-extrabold text-blue-600">${{ product.price }}</span>
-              <router-link :to="{ name: 'product-detail', params: { id: product.id }}" class="px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
-                Live Auction
+            
+            <div class="mt-4 flex justify-between items-center bg-gray-50 p-3 rounded-lg border" :class="product.status === 'hot' ? 'border-red-200' : 'border-gray-100'">
+              <div class="flex flex-col">
+                <span class="text-xs text-gray-500 font-semibold uppercase">Current Bid</span>
+                <span class="text-xl font-extrabold transition-colors duration-300" :class="product.status === 'hot' ? 'text-red-500' : 'text-blue-600'">
+                  ${{ product.activePrice }}
+                </span>
+                <span class="text-[10px] text-gray-400 mt-0.5 truncate w-24" :class="product.leadingBidder === 'You' ? 'text-green-600 font-bold' : ''">
+                  {{ product.leadingBidder === 'Start Price' ? 'No Bids Yet' : 'by ' + product.leadingBidder }}
+                </span>
+              </div>
+              <router-link :to="{ name: 'product-detail', params: { id: product.id }}" class="px-3 py-2 bg-blue-600 shadow-md text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition transform hover:scale-105 active:scale-95">
+                Join Auction
               </router-link>
             </div>
           </div>
         </div>
-      </div>
-      
-      <div v-if="!loading && products.length === 0" class="text-center text-gray-500">
-        No phones currently available.
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
+import { useAuctionStore } from '@/stores/auctionStore'
 
-// Since we haven't configured real firebase credentials yet, we mock data for visual purposes
-const products = ref([
-  { id: 1, brand: 'Apple', model: 'iPhone 13 Pro', condition: 'Excellent', price: 699, imageUrl: '' },
-  { id: 2, brand: 'Samsung', model: 'Galaxy S22 Ultra', condition: 'Good', price: 550, imageUrl: '' },
-  { id: 3, brand: 'Google', model: 'Pixel 7', condition: 'Like New', price: 400, imageUrl: '' },
-  { id: 4, brand: 'Apple', model: 'iPhone 12', condition: 'Fair', price: 299, imageUrl: '' }
-])
-const loading = ref(false)
+const auctionStore = useAuctionStore()
 
-// In a real app, you would fetch from Firebase using:
-// import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore'
-// import { db } from '../../services/firebase'
-// ...
+onMounted(() => {
+  // Kick off the global simulation when user views the marketplace
+  auctionStore.startSimulation()
+})
 </script>
