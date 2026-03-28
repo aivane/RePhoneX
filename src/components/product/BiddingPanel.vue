@@ -55,7 +55,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useAuctionStore } from '@/stores/auctionStore'
+import { useAuctionStore } from '../../stores/auctionStore'
 
 const props = defineProps({
   product: {

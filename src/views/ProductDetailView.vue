@@ -59,7 +59,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuctionStore } from '@/stores/auctionStore'
+import { useAuctionStore } from '../stores/auctionStore'
 import BiddingPanel from '../components/product/BiddingPanel.vue'
 
 const route = useRoute()

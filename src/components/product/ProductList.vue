@@ -45,7 +45,7 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { useAuctionStore } from '@/stores/auctionStore'
+import { useAuctionStore } from '../../stores/auctionStore'
 
 const auctionStore = useAuctionStore()
 
