@@ -56,6 +56,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useAuctionStore } from '../../stores/auctionStore'
+import { useAuthStore } from '../../stores/auth'
 
 const props = defineProps({
   product: {
@@ -65,13 +66,24 @@ const props = defineProps({
 })
 
 const auctionStore = useAuctionStore()
+const authStore = useAuthStore()
 
 // Reactively bind to global bid history for this specific product
 const bids = computed(() => auctionStore.bidHistories[props.product.id] || [])
 
-const handlePlaceBid = (increment) => {
-  const newAmount = props.product.activePrice + increment
-  auctionStore.placeBid(props.product.id, 'You', newAmount, true)
+const handlePlaceBid = async (increment) => {
+  if (!authStore.user) {
+    try {
+      await authStore.loginWithGoogle()
+    } catch (error) {
+      return // Login failed or user cancelled
+    }
+  }
+
+  if (authStore.user) {
+    const newAmount = props.product.activePrice + increment
+    auctionStore.placeBid(props.product.id, authStore.profile?.displayName || 'You', newAmount, true)
+  }
 }
 </script>
 

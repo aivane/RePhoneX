@@ -30,9 +30,9 @@
                   {{ product.leadingBidder === 'Start Price' ? 'No Bids Yet' : 'by ' + product.leadingBidder }}
                 </span>
               </div>
-              <router-link :to="{ name: 'product-detail', params: { id: product.id }}" class="px-3 py-2 bg-blue-600 shadow-md text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition transform hover:scale-105 active:scale-95">
+              <button @click="handleJoinAuction(product)" class="px-3 py-2 bg-blue-600 shadow-md text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition transform hover:scale-105 active:scale-95">
                 Join Auction
-              </router-link>
+              </button>
             </div>
           </div>
         </div>
@@ -43,9 +43,27 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuctionStore } from '../../stores/auctionStore'
+import { useAuthStore } from '../../stores/auth'
 
+const router = useRouter()
 const auctionStore = useAuctionStore()
+const authStore = useAuthStore()
+
+const handleJoinAuction = async (product) => {
+  if (!authStore.user) {
+    try {
+      await authStore.loginWithGoogle()
+    } catch (error) {
+      return // Login failed or cancelled
+    }
+  }
+  
+  if (authStore.user) {
+    router.push({ name: 'product-detail', params: { id: product.id } })
+  }
+}
 
 onMounted(() => {
   // Kick off the global simulation when user views the marketplace
