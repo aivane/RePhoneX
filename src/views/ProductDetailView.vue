@@ -63,15 +63,15 @@
                  <span v-if="trustScore === null" class="text-xs text-gray-400 font-semibold">Loading seller stats...</span>
                  <span v-else-if="trustScore >= 80" class="text-xs text-green-600 font-bold flex items-center">
                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                   Trusted Seller ({{ trustScore }}% Success)
+                   Trusted Seller ({{ trustScore }}% Success, {{ completedDealsCount }} Deals)
                  </span>
                  <span v-else-if="trustScore >= 50" class="text-xs text-yellow-600 font-bold flex items-center">
                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                   Moderate Risk ({{ trustScore }}% Success)
+                   Moderate Risk ({{ trustScore }}% Success, {{ completedDealsCount }} Deals)
                  </span>
                  <div v-else class="text-xs text-red-600 font-bold flex items-center bg-red-50 py-1 px-2.5 rounded-md border border-red-100 mt-1 shadow-sm w-max">
                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                   High Risk: Frequently Cancels Deals ({{ trustScore }}%)
+                   High Risk: Frequently Cancels ({{ trustScore }}%, {{ completedDealsCount }} Deals)
                  </div>
                </div>
             </div>
@@ -193,6 +193,7 @@ const product = computed(() => auctionStore.products.find(p => p.id === route.pa
 
 const activeImage = ref('')
 const trustScore = ref(null)
+const completedDealsCount = ref(0)
 
 watch(product, async (newVal) => {
   if (newVal && newVal.images && newVal.images.length > 0) {
@@ -207,6 +208,7 @@ watch(product, async (newVal) => {
         const completed = data.completedDeals || 0
         const rejected = data.rejectedDeals || 0
         const total = completed + rejected
+        completedDealsCount.value = completed
         if (total === 0) {
           trustScore.value = 100
         } else {
