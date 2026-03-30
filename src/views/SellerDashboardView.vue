@@ -89,7 +89,7 @@
                   <button @click="openEditModal(product)" title="Edit Listing" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition mr-1">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                   </button>
-                  <button @click="handleDelete(product.id)" title="Delete Listing" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">
+                  <button @click="promptDelete(product)" title="Delete Listing" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
                 </td>
@@ -194,7 +194,7 @@
           <button @click="confirmModal.show = false" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition" :disabled="isProcessingTx">Cancel</button>
           <button @click="executeConfirm" :class="confirmModal.action === 'accept' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'" class="flex-1 py-3 px-4 text-white font-bold rounded-xl shadow-md transition flex justify-center items-center disabled:opacity-50" :disabled="isProcessingTx">
             <svg v-if="isProcessingTx" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            {{ confirmModal.action === 'accept' ? 'Confirm Sale' : 'Reject Offer' }}
+            {{ confirmModal.action === 'accept' ? 'Confirm Sale' : confirmModal.action === 'reject' ? 'Reject Offer' : 'Delete Listing' }}
           </button>
         </div>
       </div>
@@ -404,6 +404,16 @@ const promptReject = (product) => {
   }
 }
 
+const promptDelete = (product) => {
+  confirmModal.value = {
+    show: true,
+    title: 'Delete Listing',
+    message: `Are you sure you want to delete ${product.brand} ${product.model}? This cannot be undone.`,
+    action: 'delete',
+    product
+  }
+}
+
 const executeConfirm = async () => {
   const { action, product } = confirmModal.value
   isProcessingTx.value = true
@@ -449,6 +459,8 @@ const executeConfirm = async () => {
     }
   } else if (action === 'reject') {
     auctionStore.resolveAuction(product.id, 'rejected')
+  } else if (action === 'delete') {
+    auctionStore.deleteProduct(product.id)
   }
   
   isProcessingTx.value = false
@@ -629,11 +641,5 @@ const submitListing = () => {
   }
   uploadedImages.value = []
   showAddModal.value = false
-}
-
-const handleDelete = (id) => {
-  if(confirm("Are you sure you want to delete this listing?")) {
-    auctionStore.deleteProduct(id)
-  }
 }
 </script>
