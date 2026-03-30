@@ -25,7 +25,7 @@
             </template>
             
             <template v-else-if="authStore.user">
-              <router-link to="/my-bids" class="hidden sm:flex text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors mr-2 my-auto items-center">
+              <router-link v-if="authStore.profile?.role === 'buyer'" to="/my-bids" class="hidden sm:flex text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors mr-2 my-auto items-center">
                 My Bids
               </router-link>
 
@@ -58,7 +58,7 @@
                     Seller Dashboard
                   </router-link>
                   <div class="border-t border-gray-100 my-1"></div>
-                  <button @click="authStore.logout" class="relative w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold transition">
+                  <button @click="handleLogout" class="relative w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold transition">
                     <svg class="inline w-4 h-4 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     Log Out
                   </button>
@@ -145,9 +145,16 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 
 const authStore = useAuthStore()
+const router = useRouter()
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.push('/')
+}
 
 onMounted(() => {
   authStore.initAuth()
