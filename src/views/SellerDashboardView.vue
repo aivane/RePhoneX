@@ -4,7 +4,16 @@
       
       <div class="flex justify-between items-center mb-8">
         <div>
-          <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Seller Dashboard</h1>
+          <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+            Seller Dashboard
+            <div v-if="trustScore !== null" class="flex items-center text-sm px-3 py-1 rounded-full font-bold shadow-sm border border-gray-100"
+                 :class="trustScore >= 80 ? 'bg-green-100 text-green-700' : trustScore >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'">
+              <svg v-if="trustScore >= 80" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+              <svg v-else-if="trustScore >= 50" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              {{ trustScore }}% Success Rate
+            </div>
+          </h1>
           <p class="text-sm text-gray-500 mt-1">Manage your storefront and active listings.</p>
         </div>
         <button @click="openAddModal" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center">
@@ -358,6 +367,15 @@ const authStore = useAuthStore()
 
 const activeTab = ref('active')
 
+const trustScore = computed(() => {
+  if (!authStore.profile) return null;
+  const completed = authStore.profile.completedDeals || 0;
+  const rejected = authStore.profile.rejectedDeals || 0;
+  const total = completed + rejected;
+  if (total === 0) return 100; // New seller
+  return Math.round((completed / total) * 100);
+})
+
 const myAllProducts = computed(() => {
   return auctionStore.products.filter(p => p.sellerUid === authStore.user?.uid)
 })
@@ -440,18 +458,16 @@ const executeConfirm = async () => {
          // Add to Seller
          if(authStore.user) {
            const sellerRef = doc(db, 'users', authStore.user.uid)
-           const sellerSnap = await getDoc(sellerRef)
-           if(sellerSnap.exists()) {
-             const sellerBalance = sellerSnap.data().balance || 0
-             const newSellerBalance = sellerBalance + product.activePrice
-             await updateDoc(sellerRef, { balance: newSellerBalance })
-             
-             // Update local authStore profile state so UI updates
-             if(authStore.profile) {
-               authStore.profile.balance = newSellerBalance
-             }
-             console.log("Successfully added balance to seller.")
+           const newSellerBalance = (authStore.profile?.balance || 0) + product.activePrice
+           const newCompletedDeals = (authStore.profile?.completedDeals || 0) + 1
+           await updateDoc(sellerRef, { balance: newSellerBalance, completedDeals: newCompletedDeals })
+           
+           // Update local authStore profile state so UI updates
+           if(authStore.profile) {
+             authStore.profile.balance = newSellerBalance
+             authStore.profile.completedDeals = newCompletedDeals
            }
+           console.log("Successfully added balance and completed deal to seller.")
          }
       }
     } catch(e) {
@@ -459,6 +475,19 @@ const executeConfirm = async () => {
     }
   } else if (action === 'reject') {
     auctionStore.resolveAuction(product.id, 'rejected')
+    try {
+      if (authStore.user) {
+        const sellerRef = doc(db, 'users', authStore.user.uid)
+        const newRejectedDeals = (authStore.profile?.rejectedDeals || 0) + 1
+        await updateDoc(sellerRef, { rejectedDeals: newRejectedDeals })
+        if (authStore.profile) {
+          authStore.profile.rejectedDeals = newRejectedDeals
+        }
+        console.log("Incremented rejected deals stats.")
+      }
+    } catch(e) {
+      console.warn("Could not update rejectedDeals stats:", e)
+    }
   } else if (action === 'delete') {
     auctionStore.deleteProduct(product.id)
   }

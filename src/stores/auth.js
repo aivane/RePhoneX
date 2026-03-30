@@ -34,6 +34,8 @@ export const useAuthStore = defineStore('auth', () => {
         if (currentData.balance === undefined) {
           updates.balance = currentData.role === 'seller' ? 0 : 2000
         }
+        if (currentData.completedDeals === undefined) updates.completedDeals = 0
+        if (currentData.rejectedDeals === undefined) updates.rejectedDeals = 0
         
         await updateDoc(userRef, updates)
         profile.value = { ...currentData, ...updates }
@@ -64,6 +66,8 @@ export const useAuthStore = defineStore('auth', () => {
         photoURL: firebaseUser.photoURL,
         role: selectedRole,
         balance: selectedRole === 'seller' ? 0 : 2000,
+        completedDeals: 0,
+        rejectedDeals: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
@@ -109,6 +113,8 @@ export const useAuthStore = defineStore('auth', () => {
             const data = userSnap.data()
             // Legacy schema user fallback pattern
             if (data.balance === undefined) data.balance = 2000
+            if (data.completedDeals === undefined) data.completedDeals = 0
+            if (data.rejectedDeals === undefined) data.rejectedDeals = 0
             profile.value = data
           }
         } catch (error) {

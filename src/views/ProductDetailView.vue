@@ -60,10 +60,19 @@
                </div>
                <div class="flex flex-col">
                  <span class="text-sm font-bold text-gray-900 leading-none mb-1">{{ product.sellerName || 'Verified Shop' }}</span>
-                 <span class="text-xs text-green-600 font-semibold flex items-center">
+                 <span v-if="trustScore === null" class="text-xs text-gray-400 font-semibold">Loading seller stats...</span>
+                 <span v-else-if="trustScore >= 80" class="text-xs text-green-600 font-bold flex items-center">
                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                   Trusted Seller
+                   Trusted Seller ({{ trustScore }}% Success)
                  </span>
+                 <span v-else-if="trustScore >= 50" class="text-xs text-yellow-600 font-bold flex items-center">
+                   <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                   Moderate Risk ({{ trustScore }}% Success)
+                 </span>
+                 <div v-else class="text-xs text-red-600 font-bold flex items-center bg-red-50 py-1 px-2.5 rounded-md border border-red-100 mt-1 shadow-sm w-max">
+                   <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                   High Risk: Frequently Cancels Deals ({{ trustScore }}%)
+                 </div>
                </div>
             </div>
             
@@ -173,6 +182,8 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuctionStore } from '../stores/auctionStore'
+import { db } from '../services/firebase'
+import { getDoc, doc } from 'firebase/firestore'
 import BiddingPanel from '../components/product/BiddingPanel.vue'
 
 const route = useRoute()
@@ -181,10 +192,32 @@ const auctionStore = useAuctionStore()
 const product = computed(() => auctionStore.products.find(p => p.id === route.params.id))
 
 const activeImage = ref('')
+const trustScore = ref(null)
 
-watch(product, (newVal) => {
+watch(product, async (newVal) => {
   if (newVal && newVal.images && newVal.images.length > 0) {
     activeImage.value = newVal.images[0]
+  }
+  
+  if (newVal && newVal.sellerUid) {
+    try {
+      const sellerSnap = await getDoc(doc(db, 'users', newVal.sellerUid))
+      if (sellerSnap.exists()) {
+        const data = sellerSnap.data()
+        const completed = data.completedDeals || 0
+        const rejected = data.rejectedDeals || 0
+        const total = completed + rejected
+        if (total === 0) {
+          trustScore.value = 100
+        } else {
+          trustScore.value = Math.round((completed / total) * 100)
+        }
+      } else {
+        trustScore.value = 100 // fallback
+      }
+    } catch(e) {
+      console.error("Error fetching seller score:", e)
+    }
   }
 }, { immediate: true })
 </script>
