@@ -94,7 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  async function updateProfileData({ displayName, phoneNumber, role }) {
+  async function updateProfileData({ displayName, phoneNumber }) {
     if (!user.value) throw new Error("Not logged in")
     try {
       loading.value = true
@@ -104,14 +104,12 @@ export const useAuthStore = defineStore('auth', () => {
         phoneNumber: phoneNumber || null,
         updatedAt: serverTimestamp()
       }
-      if (role) updates.role = role
       
       await updateDoc(userRef, updates)
       
       if (profile.value) {
         profile.value.displayName = displayName
         profile.value.phoneNumber = phoneNumber || null
-        if (role) profile.value.role = role
       }
     } catch (error) {
       console.error('Error updating profile:', error)

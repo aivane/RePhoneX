@@ -62,7 +62,8 @@ export const useAuctionStore = defineStore('auction', () => {
           leadingBidder: 'Start Price',
           status: 'available',
           images: imageSets[Math.floor(Math.random() * imageSets.length)],
-          endsAt: endsAt
+          endsAt: endsAt,
+          resolution: null // 'accepted', 'rejected', or null
         });
         hists[id] = [];
       }
@@ -75,7 +76,7 @@ export const useAuctionStore = defineStore('auction', () => {
   const defaultHistories = mockData.hists;
 
   // --- 2. HYDRATE FROM LOCAL STORAGE (To survive F5 Refresh) ---
-  const storedState = localStorage.getItem('rephonex_auction_state_v4')
+  const storedState = localStorage.getItem('rephonex_auction_state_v5')
   let initialProducts = defaultProducts
   let initialHistories = defaultHistories
 
@@ -97,7 +98,7 @@ export const useAuctionStore = defineStore('auction', () => {
   
   // Save to LocalStorage whenever these arrays mutate
   watch([products, bidHistories], () => {
-    localStorage.setItem('rephonex_auction_state_v4', JSON.stringify({
+    localStorage.setItem('rephonex_auction_state_v5', JSON.stringify({
       products: products.value,
       bidHistories: bidHistories.value
     }))
@@ -207,6 +208,7 @@ export const useAuctionStore = defineStore('auction', () => {
   const resetAuctionState = () => {
     localStorage.removeItem('rephonex_auction_state_v3')
     localStorage.removeItem('rephonex_auction_state_v4')
+    localStorage.removeItem('rephonex_auction_state_v5')
     products.value = [...defaultProducts]
     bidHistories.value = JSON.parse(JSON.stringify(defaultHistories)) // deep copy
   }
@@ -222,7 +224,8 @@ export const useAuctionStore = defineStore('auction', () => {
       activePrice: productData.basePrice,
       leadingBidder: 'Start Price',
       status: 'available',
-      endsAt: Date.now() + durationMs
+      endsAt: Date.now() + durationMs,
+      resolution: null
     });
     bidHistories.value[newId] = [];
   }
@@ -230,6 +233,13 @@ export const useAuctionStore = defineStore('auction', () => {
   const deleteProduct = (productId) => {
     products.value = products.value.filter(p => p.id !== productId)
     delete bidHistories.value[productId]
+  }
+
+  const resolveAuction = (productId, resolutionStatus) => {
+    const p = products.value.find(prod => prod.id === productId)
+    if (p) {
+      p.resolution = resolutionStatus
+    }
   }
 
   return { 
@@ -243,6 +253,7 @@ export const useAuctionStore = defineStore('auction', () => {
     stopSimulation,
     resetAuctionState,
     addProduct,
-    deleteProduct
+    deleteProduct,
+    resolveAuction
   }
 })

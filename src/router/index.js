@@ -11,6 +11,12 @@ const router = createRouter({
       component: MarketView
     },
     {
+      path: '/my-bids',
+      name: 'my-bids',
+      component: () => import('../views/MyBidsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('../views/ProfileView.vue')

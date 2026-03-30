@@ -13,8 +13,38 @@
         </button>
       </div>
 
-      <!-- Listings Table -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <!-- Tab Navigation -->
+      <div class="border-b border-gray-200 mb-6 mt-4">
+        <nav class="-mb-px flex space-x-8">
+          <button 
+            @click="activeTab = 'active'"
+            :class="activeTab === 'active' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 border-b-2 font-bold text-sm transition-colors flex items-center"
+          >
+            Active Listings
+            <span v-if="activeProducts.length > 0" class="ml-2 bg-purple-100 text-purple-600 py-0.5 px-2.5 rounded-full text-xs">{{ activeProducts.length }}</span>
+          </button>
+          <button 
+            @click="activeTab = 'pending'"
+            :class="activeTab === 'pending' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 border-b-2 font-bold text-sm transition-colors flex items-center"
+          >
+            Pending Approvals
+            <span v-if="pendingProducts.length > 0" class="ml-2 bg-yellow-100 text-yellow-700 py-0.5 px-2.5 rounded-full text-xs animate-pulse">{{ pendingProducts.length }}</span>
+          </button>
+          <button 
+            @click="activeTab = 'history'"
+            :class="activeTab === 'history' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 border-b-2 font-bold text-sm transition-colors flex items-center"
+          >
+            History
+            <span v-if="historyProducts.length > 0" class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs">{{ historyProducts.length }}</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Active Tab -->
+      <div v-if="activeTab === 'active'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -26,15 +56,15 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-if="myProducts.length === 0">
+              <tr v-if="activeProducts.length === 0">
                 <td colspan="4" class="px-6 py-12 text-center text-gray-500">
                   <div class="flex flex-col items-center">
                     <svg class="h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                    You haven't listed any phones yet.
+                    You have no active listings right now.
                   </div>
                 </td>
               </tr>
-              <tr v-for="product in myProducts" :key="product.id" class="hover:bg-gray-50 transition">
+              <tr v-for="product in activeProducts" :key="product.id" class="hover:bg-gray-50 transition">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="h-12 w-12 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
@@ -56,9 +86,88 @@
                   <div class="text-[10px] text-gray-500">{{ product.leadingBidder === 'Start Price' ? 'No bids yet' : 'Leading: ' + product.leadingBidder }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button @click="handleDelete(product.id)" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">
+                  <button @click="handleDelete(product.id)" title="Delete Listing" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pending Tab -->
+      <div v-if="activeTab === 'pending'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div v-if="pendingProducts.length === 0" class="col-span-full bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
+          <svg class="mx-auto h-12 w-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <h3 class="text-lg font-bold text-gray-900 mb-1">No Pending Approvals</h3>
+          <p class="text-gray-500 text-sm">When an auction ends with a winner, they will appear here for your review.</p>
+        </div>
+        
+        <div v-for="product in pendingProducts" :key="product.id" class="bg-white rounded-2xl shadow-md border border-yellow-200 overflow-hidden flex flex-col hover:shadow-lg transition">
+          <div class="p-5 flex items-start gap-4">
+            <div class="h-24 w-24 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+              <img :src="product.images[0]" class="h-full w-full object-cover">
+            </div>
+            <div class="flex-grow">
+              <span class="px-2 py-0.5 inline-flex text-[10px] leading-5 font-bold rounded bg-yellow-100 text-yellow-800 uppercase tracking-widest mb-1">Awaiting Review</span>
+              <h3 class="text-lg font-extrabold text-gray-900 leading-tight">{{ product.model }}</h3>
+              <p class="text-xs text-gray-500">{{ product.brand }} • {{ product.condition }}</p>
+              <div class="mt-3 bg-gray-50 rounded-lg p-2 border border-gray-100">
+                <div class="text-[10px] text-gray-400 font-bold uppercase">Winning Bid</div>
+                <div class="text-xl font-black text-gray-900">${{ product.activePrice }} <span class="text-sm text-gray-500 font-medium">by {{ product.leadingBidder }}</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex gap-3">
+            <button @click="handleReject(product.id)" class="flex-1 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 font-bold rounded-xl transition shadow-sm text-sm">Reject Offer</button>
+            <button @click="handleAccept(product)" class="flex-1 py-2 bg-green-600 text-white hover:bg-green-700 font-bold rounded-xl transition shadow-md shadow-green-600/20 text-sm">Accept Deal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div v-if="activeTab === 'history'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Product</th>
+                <th scope="col" class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Result</th>
+                <th scope="col" class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Final Price</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-if="historyProducts.length === 0">
+                <td colspan="3" class="px-6 py-12 text-center text-gray-500 italic">No sales history yet.</td>
+              </tr>
+              <tr v-for="product in historyProducts" :key="product.id" class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center opacity-80">
+                    <div class="h-10 w-10 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                      <img v-if="product.images && product.images.length" :src="product.images[0]" class="h-full w-full object-cover grayscale">
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-extrabold text-gray-900">{{ product.model }}</div>
+                      <div class="text-[10px] text-gray-400">{{ product.brand }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span v-if="product.resolution === 'accepted'" class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800">
+                    Sold to {{ product.leadingBidder }}
+                  </span>
+                  <span v-else-if="product.resolution === 'rejected'" class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800">
+                    Cancelled
+                  </span>
+                  <span v-else class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-600">
+                    Unsold (No Bids)
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-bold" :class="product.resolution === 'accepted' ? 'text-green-600' : 'text-gray-400 line-through'">
+                    ${{ product.activePrice }}
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -175,13 +284,60 @@
 import { ref, computed } from 'vue'
 import { useAuctionStore } from '../stores/auctionStore'
 import { useAuthStore } from '../stores/auth'
+import { db } from '../services/firebase'
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore'
 
 const auctionStore = useAuctionStore()
 const authStore = useAuthStore()
 
-const myProducts = computed(() => {
+const activeTab = ref('active')
+
+const myAllProducts = computed(() => {
   return auctionStore.products.filter(p => p.sellerName === (authStore.profile?.displayName || 'Unknown Seller'))
 })
+
+const activeProducts = computed(() => {
+  return myAllProducts.value.filter(p => p.endsAt > auctionStore.clock)
+})
+
+const pendingProducts = computed(() => {
+  return myAllProducts.value.filter(p => p.endsAt <= auctionStore.clock && p.leadingBidder !== 'Start Price' && p.resolution === null)
+})
+
+const historyProducts = computed(() => {
+  return myAllProducts.value.filter(p => p.resolution !== null || (p.endsAt <= auctionStore.clock && p.leadingBidder === 'Start Price')).sort((a,b) => b.endsAt - a.endsAt)
+})
+
+const handleAccept = async (product) => {
+  if(confirm(`Accept the winning bid of $${product.activePrice} and conclude this auction?`)) {
+    auctionStore.resolveAuction(product.id, 'accepted')
+    
+    // Deduct balance from buyer
+    try {
+      if (product.leadingBidder !== 'Start Price' && product.leadingBidder !== 'You') {
+         const usersRef = collection(db, 'users')
+         const q = query(usersRef, where('displayName', '==', product.leadingBidder))
+         const snapshot = await getDocs(q)
+         if (!snapshot.empty) {
+            const buyerDoc = snapshot.docs[0]
+            const currentBalance = buyerDoc.data().balance || 2000
+            await updateDoc(doc(db, 'users', buyerDoc.id), {
+               balance: Math.max(0, currentBalance - product.activePrice)
+            })
+            console.log("Successfully deducted balance from buyer.")
+         }
+      }
+    } catch(e) {
+      console.warn("Could not deduct from buyer balance (possibly due to Firestore rules in this prototype):", e)
+    }
+  }
+}
+
+const handleReject = (id) => {
+  if(confirm("Reject this bid? The action cannot be undone and the auction will be cancelled.")) {
+    auctionStore.resolveAuction(id, 'rejected')
+  }
+}
 
 const showAddModal = ref(false)
 const fileInput = ref(null)

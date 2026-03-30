@@ -76,26 +76,22 @@
               </p>
             </div>
 
-            <!-- Account Role Selection -->
+            <!-- Account Role Display -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Marketplace Role</label>
-              <div class="flex gap-4">
-                <label class="flex-1 flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all"
-                       :class="editForm.role === 'buyer' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50 shadow-sm'">
-                  <input type="radio" value="buyer" v-model="editForm.role" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-                  <span class="ml-3 block text-sm font-bold" :class="editForm.role === 'buyer' ? 'text-blue-800' : 'text-gray-700'">
-                    🛍️ Buyer
-                    <span class="block text-xs font-normal text-gray-500 mt-0.5">I want to bid and buy phones</span>
+              <div class="flex gap-4 opacity-75">
+                <div v-if="authStore.profile?.role === 'buyer'" class="w-full flex items-center p-4 border-2 border-blue-500 bg-blue-50 rounded-xl cursor-not-allowed shadow-sm">
+                  <span class="ml-1 block text-sm font-bold text-blue-800">
+                    🛍️ Buyer Account
+                    <span class="block text-xs font-normal text-gray-500 mt-0.5">Your account role is fixed and cannot be changed.</span>
                   </span>
-                </label>
-                <label class="flex-1 flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all"
-                       :class="editForm.role === 'seller' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:bg-gray-50 shadow-sm'">
-                  <input type="radio" value="seller" v-model="editForm.role" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
-                  <span class="ml-3 block text-sm font-bold" :class="editForm.role === 'seller' ? 'text-purple-800' : 'text-gray-700'">
-                    🏬 Seller
-                    <span class="block text-xs font-normal text-gray-500 mt-0.5">I want to list and sell phones</span>
+                </div>
+                <div v-else-if="authStore.profile?.role === 'seller'" class="w-full flex items-center p-4 border-2 border-purple-500 bg-purple-50 rounded-xl cursor-not-allowed shadow-sm">
+                  <span class="ml-1 block text-sm font-bold text-purple-800">
+                    🏬 Seller Account
+                    <span class="block text-xs font-normal text-gray-500 mt-0.5">Your account role is fixed and cannot be changed.</span>
                   </span>
-                </label>
+                </div>
               </div>
             </div>
 

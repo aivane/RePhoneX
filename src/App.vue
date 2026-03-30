@@ -25,6 +25,10 @@
             </template>
             
             <template v-else-if="authStore.user">
+              <router-link to="/my-bids" class="hidden sm:flex text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors mr-2 my-auto items-center">
+                My Bids
+              </router-link>
+
               <!-- Wallet Balance Badge -->
               <div class="hidden sm:flex items-center px-4 py-1.5 bg-emerald-50 rounded-full border border-emerald-200 shadow-inner mr-2 text-emerald-800 transition-all hover:shadow-md hover:bg-emerald-100 cursor-default">
                 <svg class="w-4 h-4 mr-1.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
