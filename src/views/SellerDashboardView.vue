@@ -7,7 +7,7 @@
           <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Seller Dashboard</h1>
           <p class="text-sm text-gray-500 mt-1">Manage your storefront and active listings.</p>
         </div>
-        <button @click="showAddModal = true" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center">
+        <button @click="openAddModal" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           New Listing
         </button>
@@ -86,6 +86,9 @@
                   <div class="text-[10px] text-gray-500">{{ product.leadingBidder === 'Start Price' ? 'No bids yet' : 'Leading: ' + product.leadingBidder }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button @click="openEditModal(product)" title="Edit Listing" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition mr-1">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                  </button>
                   <button @click="handleDelete(product.id)" title="Delete Listing" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
@@ -202,7 +205,7 @@
       <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showAddModal = false"></div>
       <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8 transform transition-all max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-black text-gray-900">Create New Listing</h2>
+          <h2 class="text-2xl font-black text-gray-900">{{ editProductId ? 'Edit Listing' : 'Create New Listing' }}</h2>
           <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
@@ -234,7 +237,7 @@
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-1">Auction Duration</label>
-              <select v-model.number="form.durationHours" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500 bg-white font-semibold text-purple-700">
+              <select v-model.number="form.durationHours" :disabled="editProductId" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500 bg-white font-semibold text-purple-700 disabled:opacity-50 disabled:bg-gray-100">
                 <option :value="0.008333">⚡ 30 Seconds (Testing)</option>
                 <option :value="1">1 Hour</option>
                 <option :value="12">12 Hours</option>
@@ -246,7 +249,7 @@
 
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-1">Starting Price ($)</label>
-            <input type="number" v-model="form.basePrice" min="1" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.basePrice ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
+            <input type="number" v-model="form.basePrice" min="1" :disabled="editProductId" class="w-full rounded-xl px-4 py-2 border transition-colors disabled:opacity-50 disabled:bg-gray-100" :class="errors.basePrice ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
             <p v-if="errors.basePrice" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.basePrice }}</p>
           </div>
           
@@ -334,7 +337,7 @@
             <button type="button" @click="showAddModal = false" class="mr-3 px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition">Cancel</button>
             <button type="submit" :disabled="isProcessingImages" class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl shadow-md hover:bg-purple-700 transition disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center">
               <svg v-if="isProcessingImages" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              {{ isProcessingImages ? 'Processing Images...' : 'List Product' }}
+              {{ isProcessingImages ? 'Processing Images...' : (editProductId ? 'Save Changes' : 'List Product') }}
             </button>
           </div>
         </form>
@@ -453,6 +456,7 @@ const executeConfirm = async () => {
 }
 
 const showAddModal = ref(false)
+const editProductId = ref(null)
 const fileInput = ref(null)
 const uploadedImages = ref([])
 const isProcessingImages = ref(false)
@@ -478,6 +482,33 @@ const form = ref({
     other: ''
   }
 })
+
+const openAddModal = () => {
+  editProductId.value = null
+  form.value = {
+    brand: '', model: '', condition: 'Excellent', durationHours: 24, basePrice: 300, defects: '',
+    specs: { display: '', cpu: '', ram: '', storage: '', camera: '', battery: '', os: '', connectivity: '', other: '' }
+  }
+  uploadedImages.value = []
+  errors.value = { brand: '', model: '', basePrice: '', defects: '', images: '' }
+  showAddModal.value = true
+}
+
+const openEditModal = (product) => {
+  editProductId.value = product.id
+  form.value = {
+    brand: product.brand,
+    model: product.model,
+    condition: product.condition,
+    durationHours: 24, // Not effectively editable, just visual dummy
+    basePrice: product.basePrice,
+    defects: product.defects,
+    specs: { ...(product.specs || { display: '', cpu: '', ram: '', storage: '', camera: '', battery: '', os: '', connectivity: '', other: '' }) }
+  }
+  uploadedImages.value = [...(product.images || [])]
+  errors.value = { brand: '', model: '', basePrice: '', defects: '', images: '' }
+  showAddModal.value = true
+}
 
 const processFileToCanvas = (file) => {
   return new Promise((resolve) => {
@@ -567,18 +598,29 @@ const submitListing = () => {
   if (isProcessingImages.value) return
   if (!validateForm()) return
 
-  auctionStore.addProduct({
-    sellerUid: authStore.user?.uid,
-    sellerName: authStore.profile?.displayName || 'Unknown Seller',
-    brand: form.value.brand,
-    model: form.value.model,
-    condition: form.value.condition,
-    durationHours: form.value.durationHours,
-    defects: form.value.defects,
-    basePrice: form.value.basePrice,
-    images: [...uploadedImages.value],
-    specs: { ...form.value.specs }
-  })
+  if (editProductId.value) {
+    auctionStore.updateProduct(editProductId.value, {
+      brand: form.value.brand,
+      model: form.value.model,
+      condition: form.value.condition,
+      defects: form.value.defects,
+      images: [...uploadedImages.value],
+      specs: { ...form.value.specs }
+    })
+  } else {
+    auctionStore.addProduct({
+      sellerUid: authStore.user?.uid,
+      sellerName: authStore.profile?.displayName || 'Unknown Seller',
+      brand: form.value.brand,
+      model: form.value.model,
+      condition: form.value.condition,
+      durationHours: form.value.durationHours,
+      defects: form.value.defects,
+      basePrice: form.value.basePrice,
+      images: [...uploadedImages.value],
+      specs: { ...form.value.specs }
+    })
+  }
   
   // Reset
   form.value = { 

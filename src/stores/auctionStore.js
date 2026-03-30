@@ -140,6 +140,18 @@ export const useAuctionStore = defineStore('auction', () => {
     }
   }
 
+  const updateProduct = async (productId, updateData) => {
+    try {
+      await updateDoc(doc(db, 'products', productId), {
+        ...updateData,
+        updatedAt: serverTimestamp()
+      })
+    } catch(e) {
+      console.error("Error updating product:", e)
+      throw e
+    }
+  }
+
   return { 
     products, 
     clock,
@@ -148,6 +160,7 @@ export const useAuctionStore = defineStore('auction', () => {
     listenToProducts,
     placeBid, 
     addProduct,
+    updateProduct,
     deleteProduct,
     resolveAuction
   }
