@@ -178,7 +178,7 @@
 
     <!-- Confirm Action Modal -->
     <div v-if="confirmModal.show" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="if(!isProcessingTx) confirmModal.show = false"></div>
+      <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="!isProcessingTx && (confirmModal.show = false)"></div>
       <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center transform transition-all">
         <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-6" :class="confirmModal.action === 'accept' ? 'bg-green-100' : 'bg-red-100'">
           <svg v-if="confirmModal.action === 'accept'" class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
