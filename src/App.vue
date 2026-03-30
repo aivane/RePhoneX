@@ -67,7 +67,7 @@
             </template>
             
             <template v-else>
-              <button @click="showRoleModal = true" class="bg-gray-900 border border-gray-800 shadow-md px-5 py-2 text-white font-semibold rounded-full hover:bg-gray-800 hover:-translate-y-0.5 transition-all duration-200 flex items-center text-sm">
+              <button @click="authStore.loginWithGoogle()" class="bg-gray-900 border border-gray-800 shadow-md px-5 py-2 text-white font-semibold rounded-full hover:bg-gray-800 hover:-translate-y-0.5 transition-all duration-200 flex items-center text-sm">
                 <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -106,11 +106,11 @@
       </div>
     </footer>
     <!-- Role Selection Modal -->
-    <div v-if="showRoleModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showRoleModal = false"></div>
+    <div v-if="authStore.needsRoleSelection" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="authStore.needsRoleSelection = false"></div>
       <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 transform transition-all">
         
-        <button @click="showRoleModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
+        <button @click="authStore.needsRoleSelection = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
         
@@ -118,7 +118,7 @@
         <p class="text-sm text-gray-500 text-center mb-8">How would you like to use our platform?</p>
         
         <div class="space-y-4">
-          <button @click="handleLogin('buyer')" class="w-full group relative flex items-center p-6 bg-white border-2 border-blue-100 rounded-3xl hover:border-blue-600 hover:shadow-lg transition-all text-left">
+          <button @click="authStore.completeRegistration('buyer')" class="w-full group relative flex items-center p-6 bg-white border-2 border-blue-100 rounded-3xl hover:border-blue-600 hover:shadow-lg transition-all text-left">
             <div class="h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mr-5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             </div>
@@ -128,7 +128,7 @@
             </div>
           </button>
           
-          <button @click="handleLogin('seller')" class="w-full group relative flex items-center p-6 bg-white border-2 border-purple-100 rounded-3xl hover:border-purple-600 hover:shadow-lg transition-all text-left">
+          <button @click="authStore.completeRegistration('seller')" class="w-full group relative flex items-center p-6 bg-white border-2 border-purple-100 rounded-3xl hover:border-purple-600 hover:shadow-lg transition-all text-left">
             <div class="h-14 w-14 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 mr-5 group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
             </div>
@@ -144,16 +144,10 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useAuthStore } from './stores/auth'
 
 const authStore = useAuthStore()
-const showRoleModal = ref(false)
-
-const handleLogin = async (role) => {
-  showRoleModal.value = false
-  await authStore.loginWithGoogle(role)
-}
 
 onMounted(() => {
   authStore.initAuth()

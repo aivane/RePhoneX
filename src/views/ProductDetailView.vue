@@ -69,27 +69,87 @@
             
             <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
               <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-              Device Features
+              Device Specifications
             </h3>
-            <div class="bg-blue-50/50 rounded-2xl p-6 border border-blue-100 mb-8">
-              <ul role="list" class="space-y-4 text-gray-700 font-medium">
-                <li class="flex items-center">
-                  <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                  Factory unlocked for all carriers worldwide
-                </li>
-                <li class="flex items-center">
-                  <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                  Original battery capacity > 90%
-                </li>
-                <li class="flex items-center">
-                  <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                  Includes premium fast charger and tempered glass
-                </li>
-                <li class="flex items-center">
-                  <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                  1-year RePhoneX Protection Guarantee
-                </li>
-              </ul>
+            
+            <div v-if="product.specs" class="bg-blue-50/50 rounded-2xl p-6 border border-blue-100 mb-8">
+              <div class="grid grid-cols-2 gap-y-5 gap-x-6">
+                <div v-if="product.specs.display" class="flex items-start">
+                  <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Display</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.display }}</div>
+                  </div>
+                </div>
+                
+                <div v-if="product.specs.cpu" class="flex items-start">
+                  <svg class="w-5 h-5 text-purple-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Processor</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.cpu }}</div>
+                  </div>
+                </div>
+
+                <div v-if="product.specs.ram" class="flex items-start">
+                  <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Memory (RAM)</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.ram }}</div>
+                  </div>
+                </div>
+
+                <div v-if="product.specs.storage" class="flex items-start">
+                  <svg class="w-5 h-5 text-indigo-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Storage</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.storage }}</div>
+                  </div>
+                </div>
+
+                <div v-if="product.specs.camera" class="flex items-start">
+                  <svg class="w-5 h-5 text-pink-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Camera</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.camera }}</div>
+                  </div>
+                </div>
+
+                <div v-if="product.specs.battery" class="flex items-start">
+                  <svg class="w-5 h-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Battery</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.battery }}</div>
+                  </div>
+                </div>
+
+                <div v-if="product.specs.os" class="flex items-start">
+                  <svg class="w-5 h-5 text-teal-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">OS</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.os }}</div>
+                  </div>
+                </div>
+
+                <div v-if="product.specs.connectivity" class="flex items-start">
+                  <svg class="w-5 h-5 text-blue-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Connectivity</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ product.specs.connectivity }}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div v-if="product.specs.other" class="mt-6 pt-4 border-t border-blue-100 flex items-start">
+                  <svg class="w-5 h-5 text-gray-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <div>
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Other Features</div>
+                    <div class="text-sm font-semibold text-gray-800 leading-relaxed">{{ product.specs.other }}</div>
+                  </div>
+              </div>
+            </div>
+
+            <div v-else class="bg-gray-50/50 rounded-2xl p-6 border border-gray-100 mb-8 text-center">
+               <span class="text-gray-400 italic text-sm">No detailed specifications provided for this listing.</span>
             </div>
           </div>
         </div>

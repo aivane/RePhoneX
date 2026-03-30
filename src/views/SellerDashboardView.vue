@@ -120,8 +120,8 @@
             </div>
           </div>
           <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex gap-3">
-            <button @click="handleReject(product.id)" class="flex-1 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 font-bold rounded-xl transition shadow-sm text-sm">Reject Offer</button>
-            <button @click="handleAccept(product)" class="flex-1 py-2 bg-green-600 text-white hover:bg-green-700 font-bold rounded-xl transition shadow-md shadow-green-600/20 text-sm">Accept Deal</button>
+            <button @click="promptReject(product)" class="flex-1 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 font-bold rounded-xl transition shadow-sm text-sm">Reject Offer</button>
+            <button @click="promptAccept(product)" class="flex-1 py-2 bg-green-600 text-white hover:bg-green-700 font-bold rounded-xl transition shadow-md shadow-green-600/20 text-sm">Accept Deal</button>
           </div>
         </div>
       </div>
@@ -172,6 +172,27 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Action Modal -->
+    <div v-if="confirmModal.show" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="if(!isProcessingTx) confirmModal.show = false"></div>
+      <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center transform transition-all">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-6" :class="confirmModal.action === 'accept' ? 'bg-green-100' : 'bg-red-100'">
+          <svg v-if="confirmModal.action === 'accept'" class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <svg v-else class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </div>
+        <h3 class="text-2xl font-black text-gray-900 mb-2">{{ confirmModal.title }}</h3>
+        <p class="text-sm text-gray-500 mb-8">{{ confirmModal.message }}</p>
+        
+        <div class="flex gap-3">
+          <button @click="confirmModal.show = false" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition" :disabled="isProcessingTx">Cancel</button>
+          <button @click="executeConfirm" :class="confirmModal.action === 'accept' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'" class="flex-1 py-3 px-4 text-white font-bold rounded-xl shadow-md transition flex justify-center items-center disabled:opacity-50" :disabled="isProcessingTx">
+            <svg v-if="isProcessingTx" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            {{ confirmModal.action === 'accept' ? 'Confirm Sale' : 'Reject Offer' }}
+          </button>
         </div>
       </div>
     </div>
@@ -227,6 +248,48 @@
             <label class="block text-sm font-bold text-gray-700 mb-1">Starting Price ($)</label>
             <input type="number" v-model="form.basePrice" min="1" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.basePrice ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
             <p v-if="errors.basePrice" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.basePrice }}</p>
+          </div>
+          
+          <div class="border-t border-gray-100 pt-5 mt-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Device Specifications</h3>
+            <div class="grid grid-cols-2 gap-5 mb-5">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Display</label>
+                <input type="text" v-model="form.specs.display" placeholder="e.g. 6.1 OLED" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Processor</label>
+                <input type="text" v-model="form.specs.cpu" placeholder="e.g. A15 Bionic" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Memory (RAM)</label>
+                <input type="text" v-model="form.specs.ram" placeholder="e.g. 8GB" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Storage</label>
+                <input type="text" v-model="form.specs.storage" placeholder="e.g. 256GB" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Camera</label>
+                <input type="text" v-model="form.specs.camera" placeholder="e.g. 12MP Dual" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Battery</label>
+                <input type="text" v-model="form.specs.battery" placeholder="e.g. 95% Health" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">OS</label>
+                <input type="text" v-model="form.specs.os" placeholder="e.g. iOS 16" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">Connectivity</label>
+                <input type="text" v-model="form.specs.connectivity" placeholder="e.g. 5G, Wi-Fi 6" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Other Features</label>
+              <textarea v-model="form.specs.other" rows="2" placeholder="e.g. Dual SIM, Face ID, Waterproof" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500"></textarea>
+            </div>
           </div>
           
           <div>
@@ -308,13 +371,47 @@ const historyProducts = computed(() => {
   return myAllProducts.value.filter(p => p.resolution !== null || (p.endsAt <= auctionStore.clock && p.leadingBidder === 'Start Price')).sort((a,b) => b.endsAt - a.endsAt)
 })
 
-const handleAccept = async (product) => {
-  if(confirm(`Accept the winning bid of $${product.activePrice} and conclude this auction?`)) {
+const confirmModal = ref({
+  show: false,
+  title: '',
+  message: '',
+  action: null,
+  product: null
+})
+
+const isProcessingTx = ref(false)
+
+const promptAccept = (product) => {
+  confirmModal.value = {
+    show: true,
+    title: 'Confirm Sale',
+    message: `You are about to sell ${product.model} for $${product.activePrice}. This will transfer funds to your wallet.`,
+    action: 'accept',
+    product
+  }
+}
+
+const promptReject = (product) => {
+  confirmModal.value = {
+    show: true,
+    title: 'Reject Offer',
+    message: `You are about to reject the winning bid for ${product.model}. The auction will be cancelled and cannot be undone.`,
+    action: 'reject',
+    product
+  }
+}
+
+const executeConfirm = async () => {
+  const { action, product } = confirmModal.value
+  isProcessingTx.value = true
+  
+  if (action === 'accept') {
     auctionStore.resolveAuction(product.id, 'accepted')
     
-    // Deduct balance from buyer
+    // Process Financials
     try {
       if (product.leadingBidder !== 'Start Price' && product.leadingBidder !== 'You') {
+         // Deduct from Buyer
          const usersRef = collection(db, 'users')
          const q = query(usersRef, where('displayName', '==', product.leadingBidder))
          const snapshot = await getDocs(q)
@@ -326,17 +423,33 @@ const handleAccept = async (product) => {
             })
             console.log("Successfully deducted balance from buyer.")
          }
+
+         // Add to Seller
+         if(authStore.user) {
+           const sellerRef = doc(db, 'users', authStore.user.uid)
+           const sellerSnap = await getDoc(sellerRef)
+           if(sellerSnap.exists()) {
+             const sellerBalance = sellerSnap.data().balance || 0
+             const newSellerBalance = sellerBalance + product.activePrice
+             await updateDoc(sellerRef, { balance: newSellerBalance })
+             
+             // Update local authStore profile state so UI updates
+             if(authStore.profile) {
+               authStore.profile.balance = newSellerBalance
+             }
+             console.log("Successfully added balance to seller.")
+           }
+         }
       }
     } catch(e) {
-      console.warn("Could not deduct from buyer balance (possibly due to Firestore rules in this prototype):", e)
+      console.warn("Could not process financials:", e)
     }
+  } else if (action === 'reject') {
+    auctionStore.resolveAuction(product.id, 'rejected')
   }
-}
-
-const handleReject = (id) => {
-  if(confirm("Reject this bid? The action cannot be undone and the auction will be cancelled.")) {
-    auctionStore.resolveAuction(id, 'rejected')
-  }
+  
+  isProcessingTx.value = false
+  confirmModal.value.show = false
 }
 
 const showAddModal = ref(false)
@@ -352,7 +465,18 @@ const form = ref({
   condition: 'Excellent',
   durationHours: 24, // default to 24 hours
   basePrice: 300,
-  defects: ''
+  defects: '',
+  specs: {
+    display: '',
+    cpu: '',
+    ram: '',
+    storage: '',
+    camera: '',
+    battery: '',
+    os: '',
+    connectivity: '',
+    other: ''
+  }
 })
 
 const processFileToCanvas = (file) => {
@@ -451,11 +575,15 @@ const submitListing = () => {
     durationHours: form.value.durationHours,
     defects: form.value.defects,
     basePrice: form.value.basePrice,
-    images: [...uploadedImages.value]
+    images: [...uploadedImages.value],
+    specs: { ...form.value.specs }
   })
   
   // Reset
-  form.value = { brand: '', model: '', condition: 'Excellent', durationHours: 24, basePrice: 300, defects: '' }
+  form.value = { 
+    brand: '', model: '', condition: 'Excellent', durationHours: 24, basePrice: 300, defects: '',
+    specs: { display: '', cpu: '', ram: '', storage: '', camera: '', battery: '', os: '', connectivity: '', other: '' }
+  }
   uploadedImages.value = []
   showAddModal.value = false
 }

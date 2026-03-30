@@ -8,8 +8,10 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const profile = ref(null)
   const loading = ref(true)
+  const needsRoleSelection = ref(false)
+  const pendingNewUser = ref(null)
 
-  async function loginWithGoogle(selectedRole = 'buyer') {
+  async function loginWithGoogle() {
     try {
       loading.value = true
       const provider = new GoogleAuthProvider()
@@ -21,35 +23,61 @@ export const useAuthStore = defineStore('auth', () => {
       const userSnap = await getDoc(userRef)
 
       if (!userSnap.exists()) {
-        // First time login - create profile based on schema
-        const newProfile = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          role: selectedRole, // Set role strictly on first login
-          balance: 2000,      // Pre-fund the virtual wallet with $2000
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }
-        await setDoc(userRef, newProfile)
-        profile.value = newProfile
+        // First time login - wait for role selection
+        pendingNewUser.value = firebaseUser
+        needsRoleSelection.value = true
       } else {
         const currentData = userSnap.data()
         
         // Exists - update the updatedAt timestamp and ensure balance exists
         const updates = { updatedAt: serverTimestamp() }
         if (currentData.balance === undefined) {
-          updates.balance = 2000
+          updates.balance = currentData.role === 'seller' ? 0 : 2000
         }
         
         await updateDoc(userRef, updates)
         profile.value = { ...currentData, ...updates }
+        user.value = firebaseUser
       }
       
       user.value = firebaseUser
     } catch (error) {
       console.error('Error signing in with Google:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function completeRegistration(selectedRole) {
+    if (!pendingNewUser.value) return;
+    
+    try {
+      loading.value = true
+      const firebaseUser = pendingNewUser.value
+      const userRef = doc(db, 'users', firebaseUser.uid)
+      
+      const newProfile = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+        role: selectedRole,
+        balance: selectedRole === 'seller' ? 0 : 2000,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }
+      
+      await setDoc(userRef, newProfile)
+      profile.value = newProfile
+      user.value = firebaseUser
+      
+      // Clear pending state
+      pendingNewUser.value = null
+      needsRoleSelection.value = false
+      
+    } catch (error) {
+      console.error('Error completing registration:', error)
       throw error
     } finally {
       loading.value = false
@@ -119,5 +147,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, profile, loading, loginWithGoogle, logout, initAuth, updateProfileData }
+  return { user, profile, loading, needsRoleSelection, pendingNewUser, loginWithGoogle, completeRegistration, logout, initAuth, updateProfileData }
 })
