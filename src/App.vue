@@ -147,8 +147,10 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import { useAuctionStore } from './stores/auctionStore'
 
 const authStore = useAuthStore()
+const auctionStore = useAuctionStore()
 const router = useRouter()
 
 const handleLogout = async () => {
@@ -158,6 +160,7 @@ const handleLogout = async () => {
 
 onMounted(() => {
   authStore.initAuth()
+  auctionStore.listenToProducts()
 })
 </script>
 

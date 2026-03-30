@@ -156,7 +156,12 @@ const formattedTime = computed(() => {
 
 
 // --- History & Actions Logic ---
-const bids = computed(() => auctionStore.bidHistories[props.product.id] || [])
+const bids = computed(() => {
+  return (props.product.bids || []).map(b => ({
+    ...b,
+    isMine: b.uid === authStore.user?.uid
+  }))
+})
 
 const customBid = ref('')
 const bidError = ref('')
@@ -189,7 +194,12 @@ const handleCustomBid = async () => {
       return
     }
 
-    auctionStore.placeBid(props.product.id, authStore.profile?.displayName || 'You', amount, true)
+    auctionStore.placeBid(
+      props.product.id, 
+      authStore.profile?.displayName || 'Unknown Buyer', 
+      authStore.user.uid, 
+      amount
+    )
     customBid.value = ''
   }
 }
@@ -206,7 +216,12 @@ const handlePlaceBid = async (increment) => {
       return
     }
 
-    auctionStore.placeBid(props.product.id, authStore.profile?.displayName || 'You', newAmount, true)
+    auctionStore.placeBid(
+      props.product.id, 
+      authStore.profile?.displayName || 'Unknown Buyer', 
+      authStore.user.uid, 
+      newAmount
+    )
   }
 }
 </script>

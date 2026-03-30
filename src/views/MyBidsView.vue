@@ -95,12 +95,12 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <!-- Won & Accepted -->
-                    <span v-if="product.leadingBidder === (authStore.profile?.displayName || 'You') && product.resolution === 'accepted'" class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800">
+                    <span v-if="product.leadingBidderUid === authStore.user?.uid && product.resolution === 'accepted'" class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                       Purchased
                     </span>
                     <!-- Won but Rejected -->
-                    <span v-else-if="product.leadingBidder === (authStore.profile?.displayName || 'You') && product.resolution === 'rejected'" class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800">
+                    <span v-else-if="product.leadingBidderUid === authStore.user?.uid && product.resolution === 'rejected'" class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                       Seller Rejected
                     </span>
@@ -134,47 +134,49 @@ const auctionStore = useAuctionStore()
 const authStore = useAuthStore()
 const activeTab = ref('active')
 
-const myName = computed(() => authStore.profile?.displayName || 'You')
+const myUid = computed(() => authStore.user?.uid)
 
 const myOngoingBids = computed(() => {
+  if (!myUid.value) return []
   return auctionStore.products.filter(p => {
     const timeRemaining = p.endsAt - auctionStore.clock;
     if (timeRemaining <= 0) return false;
     
     // Check if user is leading or in history
-    const history = auctionStore.bidHistories[p.id] || [];
-    const isInteracted = p.leadingBidder === myName.value || history.some(b => b.isMine);
+    const history = p.bids || [];
+    const isInteracted = p.leadingBidderUid === myUid.value || history.some(b => b.uid === myUid.value);
     return isInteracted;
   });
 })
 
 const myPendingWins = computed(() => {
+  if (!myUid.value) return []
   return auctionStore.products.filter(p => {
     const timeRemaining = p.endsAt - auctionStore.clock;
     if (timeRemaining > 0) return false;
     
-    return p.leadingBidder === myName.value && p.resolution === null;
+    return p.leadingBidderUid === myUid.value && p.resolution === null;
   });
 })
 
 const myHistory = computed(() => {
+  if (!myUid.value) return []
   return auctionStore.products.filter(p => {
     const timeRemaining = p.endsAt - auctionStore.clock;
     if (timeRemaining > 0) return false;
     
     // Won and Accepted/Rejected
-    if (p.leadingBidder === myName.value && p.resolution !== null) {
+    if (p.leadingBidderUid === myUid.value && p.resolution !== null) {
       return true;
     }
     
     // Lost
-    if (p.leadingBidder !== myName.value) {
-      const history = auctionStore.bidHistories[p.id] || [];
-      // Only include it if I actually placed a bid (isMine exists)
-      if (history.some(b => b.isMine)) return true;
+    if (p.leadingBidderUid !== myUid.value) {
+      const history = p.bids || [];
+      if (history.some(b => b.uid === myUid.value)) return true;
     }
     
     return false;
-  }).sort((a,b) => b.endsAt - a.endsAt); // Most recently ended first
+  }).sort((a,b) => b.endsAt - a.endsAt);
 })
 </script>

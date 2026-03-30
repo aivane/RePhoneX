@@ -356,7 +356,7 @@ const authStore = useAuthStore()
 const activeTab = ref('active')
 
 const myAllProducts = computed(() => {
-  return auctionStore.products.filter(p => p.sellerName === (authStore.profile?.displayName || 'Unknown Seller'))
+  return auctionStore.products.filter(p => p.sellerUid === authStore.user?.uid)
 })
 
 const activeProducts = computed(() => {
@@ -568,6 +568,7 @@ const submitListing = () => {
   if (!validateForm()) return
 
   auctionStore.addProduct({
+    sellerUid: authStore.user?.uid,
     sellerName: authStore.profile?.displayName || 'Unknown Seller',
     brand: form.value.brand,
     model: form.value.model,

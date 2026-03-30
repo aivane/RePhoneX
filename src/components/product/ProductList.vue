@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuctionStore } from '../../stores/auctionStore'
 import ProductCard from './ProductCard.vue'
 
@@ -69,11 +69,6 @@ const filteredProducts = computed(() => {
      
      return false;
   })
-})
-
-onMounted(() => {
-  // Kick off the global simulation when user views the marketplace
-  auctionStore.startSimulation()
 })
 </script>
 
