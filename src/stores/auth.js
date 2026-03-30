@@ -9,7 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
   const profile = ref(null)
   const loading = ref(true)
 
-  async function loginWithGoogle() {
+  async function loginWithGoogle(selectedRole = 'buyer') {
     try {
       loading.value = true
       const provider = new GoogleAuthProvider()
@@ -27,7 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
-          role: 'user', // Default role
+          role: selectedRole, // Set role strictly on first login
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }

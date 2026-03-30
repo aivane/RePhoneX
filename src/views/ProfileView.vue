@@ -18,7 +18,13 @@
             </div>
           </div>
           
-          <h1 class="text-2xl font-bold text-gray-900 mb-8">Edit Profile</h1>
+          <div class="flex items-center justify-between mb-8">
+            <h1 class="text-2xl font-bold text-gray-900">Edit Profile</h1>
+            <span class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold capitalize"
+                  :class="authStore.profile?.role === 'seller' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'">
+              ✨ {{ authStore.profile?.role || 'Buyer' }} Account
+            </span>
+          </div>
           
           <form @submit.prevent="saveProfile" class="space-y-6">
             <!-- Email (Read-only) -->
