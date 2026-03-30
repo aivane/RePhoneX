@@ -2,6 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 
 export const useAuctionStore = defineStore('auction', () => {
+  // Global network clock that ticks every second for sync
+  const clock = ref(Date.now())
+  setInterval(() => {
+    clock.value = Date.now()
+  }, 1000)
   // Generating 25 mock products (5 sellers x 5 products)
   const generateMockData = () => {
     const sellers = ['TechSource Certified', 'Mobile Hub', 'Gadget Xchange', 'Smart Life Electronics', 'Pro Device Deals'];
@@ -37,6 +42,14 @@ export const useAuctionStore = defineStore('auction', () => {
       for(let j=0; j<5; j++) {
         const id = String(idCounter++);
         const basePrice = Math.floor(Math.random() * 500) + 200;
+        
+        let endsAt = Date.now();
+        if (idCounter <= 4) { // First 3 products get 15-45 seconds for rapid testing
+           endsAt += Math.floor(Math.random() * 30000) + 15000;
+        } else { // Rest get 1-24 hours
+           endsAt += Math.floor(Math.random() * 86400000) + 3600000;
+        }
+
         prods.push({
           id,
           sellerName: seller,
@@ -48,7 +61,8 @@ export const useAuctionStore = defineStore('auction', () => {
           activePrice: basePrice,
           leadingBidder: 'Start Price',
           status: 'available',
-          images: imageSets[Math.floor(Math.random() * imageSets.length)]
+          images: imageSets[Math.floor(Math.random() * imageSets.length)],
+          endsAt: endsAt
         });
         hists[id] = [];
       }
@@ -61,7 +75,7 @@ export const useAuctionStore = defineStore('auction', () => {
   const defaultHistories = mockData.hists;
 
   // --- 2. HYDRATE FROM LOCAL STORAGE (To survive F5 Refresh) ---
-  const storedState = localStorage.getItem('rephonex_auction_state_v3')
+  const storedState = localStorage.getItem('rephonex_auction_state_v4')
   let initialProducts = defaultProducts
   let initialHistories = defaultHistories
 
@@ -83,7 +97,7 @@ export const useAuctionStore = defineStore('auction', () => {
   
   // Save to LocalStorage whenever these arrays mutate
   watch([products, bidHistories], () => {
-    localStorage.setItem('rephonex_auction_state_v3', JSON.stringify({
+    localStorage.setItem('rephonex_auction_state_v4', JSON.stringify({
       products: products.value,
       bidHistories: bidHistories.value
     }))
@@ -106,8 +120,17 @@ export const useAuctionStore = defineStore('auction', () => {
     const product = products.value.find(p => p.id === productId)
     if (!product) return
 
+    // Ensure auction is not expired
+    const currentMs = Date.now()
+    if (product.endsAt <= currentMs) return
+
     // Ensure bid is genuinely higher
     if (amount <= product.activePrice && product.leadingBidder !== 'Start Price') return
+
+    // Anti-Sniper Logic (Popcorn bid) - if less than 10 seconds remain, extend by 10s
+    if (product.endsAt - currentMs < 10000) {
+      product.endsAt += 10000
+    }
 
     // Update product active status
     product.activePrice = amount
@@ -149,7 +172,10 @@ export const useAuctionStore = defineStore('auction', () => {
       // Pick 1 or 2 random products to receive activity
       const numProductsToTick = Math.random() > 0.5 ? 2 : 1
       for (let i = 0; i < numProductsToTick; i++) {
-        const randomProduct = products.value[Math.floor(Math.random() * products.value.length)]
+        const activeProducts = products.value.filter(p => p.endsAt > Date.now())
+        if (activeProducts.length === 0) return // Nothing left to bid on
+        
+        const randomProduct = activeProducts[Math.floor(Math.random() * activeProducts.length)]
         
         const randomBot = botNames[Math.floor(Math.random() * botNames.length)]
         
@@ -180,6 +206,7 @@ export const useAuctionStore = defineStore('auction', () => {
   // Helper method to clear the presenter's cache back to default
   const resetAuctionState = () => {
     localStorage.removeItem('rephonex_auction_state_v3')
+    localStorage.removeItem('rephonex_auction_state_v4')
     products.value = [...defaultProducts]
     bidHistories.value = JSON.parse(JSON.stringify(defaultHistories)) // deep copy
   }
@@ -187,12 +214,15 @@ export const useAuctionStore = defineStore('auction', () => {
   // --- 6. SELLER CRUD METHODS ---
   const addProduct = (productData) => {
     const newId = 'prod_' + Date.now();
+    const durationMs = (productData.durationHours || 24) * 60 * 60 * 1000;
+    
     products.value.unshift({
       id: newId,
       ...productData,
       activePrice: productData.basePrice,
       leadingBidder: 'Start Price',
-      status: 'available'
+      status: 'available',
+      endsAt: Date.now() + durationMs
     });
     bidHistories.value[newId] = [];
   }
@@ -205,6 +235,7 @@ export const useAuctionStore = defineStore('auction', () => {
   return { 
     products, 
     bidHistories, 
+    clock,
     getProductById, 
     getHistoryById, 
     placeBid, 

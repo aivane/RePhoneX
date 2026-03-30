@@ -95,7 +95,7 @@
           <div class="grid grid-cols-2 gap-5">
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-1">Condition</label>
-              <select v-model="form.condition" class="w-full border-gray-300 rounded-xl focus:ring-purple-500 focus:border-purple-500 px-4 py-2 border bg-white">
+              <select v-model="form.condition" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500 bg-white">
                 <option value="Like New">Like New</option>
                 <option value="Excellent">Excellent</option>
                 <option value="Good">Good</option>
@@ -103,10 +103,21 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">Starting Price ($)</label>
-              <input type="number" v-model="form.basePrice" min="1" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.basePrice ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
-              <p v-if="errors.basePrice" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.basePrice }}</p>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Auction Duration</label>
+              <select v-model.number="form.durationHours" class="w-full rounded-xl px-4 py-2 border border-gray-300 focus:ring-purple-500 focus:border-purple-500 bg-white font-semibold text-purple-700">
+                <option :value="0.008333">⚡ 30 Seconds (Testing)</option>
+                <option :value="1">1 Hour</option>
+                <option :value="12">12 Hours</option>
+                <option :value="24">24 Hours</option>
+                <option :value="168">7 Days</option>
+              </select>
             </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Starting Price ($)</label>
+            <input type="number" v-model="form.basePrice" min="1" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.basePrice ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
+            <p v-if="errors.basePrice" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.basePrice }}</p>
           </div>
           
           <div>
@@ -116,14 +127,43 @@
           </div>
           
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">Image URLs (One per line)</label>
-            <textarea v-model="form.imagesText" rows="3" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg" class="w-full rounded-xl px-4 py-2 border font-mono text-sm transition-colors" :class="errors.imagesText ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'"></textarea>
-            <p v-if="errors.imagesText" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.imagesText }}</p>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Product Images</label>
+            <div 
+              class="border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer flex flex-col items-center justify-center"
+              :class="errors.images ? 'border-red-300 bg-red-50 hover:bg-red-100' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'"
+              @click="$refs.fileInput.click()"
+            >
+              <svg class="mx-auto h-10 w-10 mb-2" :class="errors.images ? 'text-red-400' : 'text-gray-400'" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="text-sm font-bold text-purple-600 group-hover:text-purple-700">Click to upload photos</span>
+              <span class="text-xs text-gray-500 mt-1">Auto-resized for fast loading</span>
+              <input type="file" ref="fileInput" class="hidden" multiple accept="image/*" @change="handleFileUpload">
+            </div>
+            <p v-if="errors.images" class="mt-1.5 text-xs text-red-600 font-bold flex items-center">
+              <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+              {{ errors.images }}
+            </p>
+            
+            <!-- Image Previews -->
+            <div v-if="uploadedImages.length > 0" class="mt-4 grid grid-cols-4 sm:grid-cols-5 gap-3">
+              <div v-for="(img, idx) in uploadedImages" :key="idx" class="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                <img :src="img" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                  <button type="button" @click.stop="removeImage(idx)" class="bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600 shadow-md transform hover:scale-110 transition-transform">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div class="pt-4 border-t border-gray-100 flex justify-end">
             <button type="button" @click="showAddModal = false" class="mr-3 px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition">Cancel</button>
-            <button type="submit" class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl shadow-md hover:bg-purple-700 transition">List Product</button>
+            <button type="submit" :disabled="isProcessingImages" class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl shadow-md hover:bg-purple-700 transition disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center">
+              <svg v-if="isProcessingImages" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              {{ isProcessingImages ? 'Processing Images...' : 'List Product' }}
+            </button>
           </div>
         </form>
       </div>
@@ -144,21 +184,76 @@ const myProducts = computed(() => {
 })
 
 const showAddModal = ref(false)
+const fileInput = ref(null)
+const uploadedImages = ref([])
+const isProcessingImages = ref(false)
 
-const errors = ref({ brand: '', model: '', basePrice: '', defects: '', imagesText: '' })
+const errors = ref({ brand: '', model: '', basePrice: '', defects: '', images: '' })
 
 const form = ref({
   brand: '',
   model: '',
   condition: 'Excellent',
+  durationHours: 24, // default to 24 hours
   basePrice: 300,
-  defects: '',
-  imagesText: ''
+  defects: ''
 })
+
+const processFileToCanvas = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const maxWidth = 800
+        let width = img.width
+        let height = img.height
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width)
+          width = maxWidth
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        // Auto-compress to WEBP 0.7 for huge space saving in localStorage
+        resolve(canvas.toDataURL('image/webp', 0.7))
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+const handleFileUpload = async (e) => {
+  const files = e.target.files
+  if (!files || files.length === 0) return
+  
+  isProcessingImages.value = true
+  errors.value.images = ''
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (!file.type.startsWith('image/')) continue
+    const base64Data = await processFileToCanvas(file)
+    uploadedImages.value.push(base64Data)
+  }
+  
+  // reset input so the same files can be selected again if deleted
+  if (fileInput.value) fileInput.value.value = ''
+  isProcessingImages.value = false
+}
+
+const removeImage = (idx) => {
+  uploadedImages.value.splice(idx, 1)
+}
 
 const validateForm = () => {
   let isValid = true
-  errors.value = { brand: '', model: '', basePrice: '', defects: '', imagesText: '' }
+  errors.value = { brand: '', model: '', basePrice: '', defects: '', images: '' }
   
   if (form.value.brand.trim().length < 2) {
     errors.value.brand = 'Brand must be at least 2 characters.'
@@ -180,41 +275,32 @@ const validateForm = () => {
     isValid = false
   }
   
-  const lines = form.value.imagesText.split('\n').map(u => u.trim()).filter(u => u.length > 0)
-  if (lines.length === 0) {
-    errors.value.imagesText = 'Please provide at least one image URL.'
+  if (uploadedImages.value.length === 0) {
+    errors.value.images = 'Please upload at least one image.'
     isValid = false
-  } else {
-    for (const url of lines) {
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        errors.value.imagesText = 'All URLs must start with http:// or https://'
-        isValid = false
-        break
-      }
-    }
   }
   
   return isValid
 }
 
 const submitListing = () => {
+  if (isProcessingImages.value) return
   if (!validateForm()) return
-
-  // Parse images text into array of clean URLs
-  const imageUrls = form.value.imagesText.split('\n').map(u => u.trim()).filter(u => u.length > 0)
 
   auctionStore.addProduct({
     sellerName: authStore.profile?.displayName || 'Unknown Seller',
     brand: form.value.brand,
     model: form.value.model,
     condition: form.value.condition,
+    durationHours: form.value.durationHours,
     defects: form.value.defects,
     basePrice: form.value.basePrice,
-    images: imageUrls
+    images: [...uploadedImages.value]
   })
   
   // Reset
-  form.value = { brand: '', model: '', condition: 'Excellent', basePrice: 300, defects: '', imagesText: '' }
+  form.value = { brand: '', model: '', condition: 'Excellent', durationHours: 24, basePrice: 300, defects: '' }
+  uploadedImages.value = []
   showAddModal.value = false
 }
 
