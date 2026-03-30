@@ -85,5 +85,28 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  return { user, profile, loading, loginWithGoogle, logout, initAuth }
+  async function updateProfileData({ displayName, phoneNumber }) {
+    if (!user.value) throw new Error("Not logged in")
+    try {
+      loading.value = true
+      const userRef = doc(db, 'users', user.value.uid)
+      await updateDoc(userRef, {
+        displayName: displayName,
+        phoneNumber: phoneNumber || null,
+        updatedAt: serverTimestamp()
+      })
+      
+      if (profile.value) {
+        profile.value.displayName = displayName
+        profile.value.phoneNumber = phoneNumber || null
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { user, profile, loading, loginWithGoogle, logout, initAuth, updateProfileData }
 })

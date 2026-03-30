@@ -2,27 +2,73 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 
 export const useAuctionStore = defineStore('auction', () => {
-  // --- 1. SET UP DEFAULTS ---
-  const defaultProducts = [
-    { id: '1', brand: 'Apple', model: 'iPhone 13 Pro', condition: 'Excellent', basePrice: 699, activePrice: 699, leadingBidder: 'Start Price', status: 'available', imageUrl: '' },
-    { id: '2', brand: 'Samsung', model: 'Galaxy S22 Ultra', condition: 'Good', basePrice: 550, activePrice: 550, leadingBidder: 'Start Price', status: 'available', imageUrl: '' },
-    { id: '3', brand: 'Google', model: 'Pixel 7', condition: 'Like New', basePrice: 400, activePrice: 400, leadingBidder: 'Start Price', status: 'available', imageUrl: '' },
-    { id: '4', brand: 'Apple', model: 'iPhone 12', condition: 'Fair', basePrice: 299, activePrice: 299, leadingBidder: 'Start Price', status: 'available', imageUrl: '' }
-  ]
-
-  const defaultHistories = {
-    '1': [], '2': [], '3': [], '4': []
+  // Generating 25 mock products (5 sellers x 5 products)
+  const generateMockData = () => {
+    const sellers = ['TechSource Certified', 'Mobile Hub', 'Gadget Xchange', 'Smart Life Electronics', 'Pro Device Deals'];
+    const brands = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Sony'];
+    const models = [
+      ['iPhone 14 Pro', 'iPhone 13', 'iPhone 12 Mini', 'iPhone 11 Pro Max', 'iPhone SE'],
+      ['Galaxy S23 Ultra', 'Galaxy S22', 'Galaxy Z Fold 4', 'Galaxy A54', 'Galaxy Note 20'],
+      ['Pixel 7 Pro', 'Pixel 6a', 'Pixel 5', 'Pixel 7', 'Pixel 4 XL'],
+      ['OnePlus 11', 'OnePlus 10 Pro', 'OnePlus Nord N20', 'OnePlus 9', 'OnePlus 8T'],
+      ['Xperia 1 IV', 'Xperia 5 III', 'Xperia 10 IV', 'Xperia PRO-I', 'Xperia 1 III']
+    ];
+    const images = [
+      'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=800'
+    ];
+    const conditions = ['Like New', 'Excellent', 'Good', 'Fair', 'Refurbished'];
+    
+    let prods = [];
+    let hists = {};
+    let idCounter = 1;
+    
+    sellers.forEach((seller, i) => {
+      for(let j=0; j<5; j++) {
+        const id = String(idCounter++);
+        const basePrice = Math.floor(Math.random() * 500) + 200;
+        prods.push({
+          id,
+          sellerName: seller,
+          brand: brands[i],
+          model: models[i][j],
+          condition: conditions[Math.floor(Math.random() * conditions.length)],
+          basePrice: basePrice,
+          activePrice: basePrice,
+          leadingBidder: 'Start Price',
+          status: 'available',
+          imageUrl: images[Math.floor(Math.random() * images.length)]
+        });
+        hists[id] = [];
+      }
+    });
+    return { prods, hists };
   }
 
+  const mockData = generateMockData();
+  const defaultProducts = mockData.prods;
+  const defaultHistories = mockData.hists;
+
   // --- 2. HYDRATE FROM LOCAL STORAGE (To survive F5 Refresh) ---
-  const storedState = localStorage.getItem('rephonex_auction_state')
+  const storedState = localStorage.getItem('rephonex_auction_state_v2')
   let initialProducts = defaultProducts
   let initialHistories = defaultHistories
 
   if (storedState) {
     try {
       const parsed = JSON.parse(storedState)
-      if (parsed.products) initialProducts = parsed.products
+      if (parsed.products) {
+        initialProducts = parsed.products.map(p => {
+          if (!p.imageUrl) {
+            const def = defaultProducts.find(d => d.id === p.id)
+            if (def) p.imageUrl = def.imageUrl
+          }
+          return p
+        })
+      }
       if (parsed.bidHistories) initialHistories = parsed.bidHistories
     } catch(e) { 
       console.warn("Could not parse saved auction state. Reverting to defaults.") 
@@ -35,7 +81,7 @@ export const useAuctionStore = defineStore('auction', () => {
   
   // Save to LocalStorage whenever these arrays mutate
   watch([products, bidHistories], () => {
-    localStorage.setItem('rephonex_auction_state', JSON.stringify({
+    localStorage.setItem('rephonex_auction_state_v2', JSON.stringify({
       products: products.value,
       bidHistories: bidHistories.value
     }))
@@ -131,9 +177,9 @@ export const useAuctionStore = defineStore('auction', () => {
 
   // Helper method to clear the presenter's cache back to default
   const resetAuctionState = () => {
-    localStorage.removeItem('rephonex_auction_state')
+    localStorage.removeItem('rephonex_auction_state_v2')
     products.value = [...defaultProducts]
-    bidHistories.value = { '1': [], '2': [], '3': [], '4': [] }
+    bidHistories.value = JSON.parse(JSON.stringify(defaultHistories)) // deep copy
   }
 
   return { 

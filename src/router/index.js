@@ -10,6 +10,11 @@ const router = createRouter({
       component: MarketView
     },
     {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue')
+    },
+    {
       path: '/product/:id',
       name: 'product-detail',
       component: () => import('../views/ProductDetailView.vue'),
