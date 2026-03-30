@@ -9,7 +9,7 @@
     </div>
 
     <!-- Current Price Display -->
-    <div class="mb-10 text-center">
+    <div class="mb-8 text-center">
       <p class="text-sm text-gray-400 mb-2">Current Highest Bid</p>
       <div 
         class="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r transition-all duration-300 transform scale-100 drop-shadow-lg"
@@ -22,7 +22,28 @@
       </p>
     </div>
 
-    <!-- User Bidding Actions -->
+    <!-- User Custom Bidding -->
+    <div class="mb-4">
+      <div class="flex items-center">
+        <span class="bg-gray-800 text-gray-400 px-4 py-3 rounded-l-xl border border-r-0 font-bold" :class="bidError ? 'border-red-500 text-red-400' : 'border-gray-700'">$</span>
+        <input 
+          type="number" 
+          v-model="customBid" 
+          class="w-full bg-gray-800 text-white px-4 py-3 border transition-colors outline-none font-mono text-lg"
+          :class="bidError ? 'border-red-500 focus:border-red-400' : 'border-gray-700 focus:border-blue-500'"
+          :placeholder="'Min: $' + (product.activePrice + 1)"
+        >
+        <button @click="handleCustomBid" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-r-xl transition shadow-md shadow-blue-500/20 border-y border-r border-blue-600">
+          Bid
+        </button>
+      </div>
+      <p v-if="bidError" class="text-red-400 text-xs mt-2 font-bold flex items-center">
+        <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+        {{ bidError }}
+      </p>
+    </div>
+
+    <!-- Quick Increment Actions -->
     <div class="grid grid-cols-3 gap-3 mb-8">
       <button @click="handlePlaceBid(10)" class="col-span-1 bg-gray-800 hover:bg-gray-700 text-white transition rounded-xl py-3 font-semibold border border-gray-700 hover:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500">
         +$10
@@ -54,7 +75,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuctionStore } from '../../stores/auctionStore'
 import { useAuthStore } from '../../stores/auth'
 
@@ -71,17 +92,52 @@ const authStore = useAuthStore()
 // Reactively bind to global bid history for this specific product
 const bids = computed(() => auctionStore.bidHistories[props.product.id] || [])
 
-const handlePlaceBid = async (increment) => {
+const customBid = ref('')
+const bidError = ref('')
+
+const doAuthIfNeeded = async () => {
   if (!authStore.user) {
     try {
       await authStore.loginWithGoogle()
     } catch (error) {
-      return // Login failed or user cancelled
+      return false // Login failed or user cancelled
     }
   }
+  return !!authStore.user
+}
 
-  if (authStore.user) {
+const handleCustomBid = async () => {
+  bidError.value = ''
+  const amount = Number(customBid.value)
+  
+  if (!amount || amount <= props.product.activePrice) {
+    bidError.value = `Bid must be strictly higher than $${props.product.activePrice}`
+    return
+  }
+
+  if (await doAuthIfNeeded()) {
+    const availableBalance = authStore.profile?.balance || 2000
+    if (amount > availableBalance) {
+      bidError.value = `Insufficient funds. Your limit is $${availableBalance.toLocaleString()}`
+      return
+    }
+
+    auctionStore.placeBid(props.product.id, authStore.profile?.displayName || 'You', amount, true)
+    customBid.value = ''
+  }
+}
+
+const handlePlaceBid = async (increment) => {
+  bidError.value = ''
+  if (await doAuthIfNeeded()) {
     const newAmount = props.product.activePrice + increment
+    const availableBalance = authStore.profile?.balance || 2000
+    
+    if (newAmount > availableBalance) {
+      bidError.value = `Cannot bid $${newAmount}. Your limit is $${availableBalance.toLocaleString()}`
+      return
+    }
+
     auctionStore.placeBid(props.product.id, authStore.profile?.displayName || 'You', newAmount, true)
   }
 }

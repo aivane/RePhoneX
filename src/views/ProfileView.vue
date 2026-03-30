@@ -48,10 +48,14 @@
                 <input 
                   type="text" 
                   v-model="editForm.displayName"
-                  required
-                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md px-4 py-2 border"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm rounded-md px-4 py-2 border transition-colors"
+                  :class="errors.displayName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'"
                 />
               </div>
+              <p v-if="errors.displayName" class="mt-1.5 text-xs text-red-600 font-bold flex items-center">
+                <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                {{ errors.displayName }}
+              </p>
             </div>
 
             <!-- Phone Number -->
@@ -59,11 +63,39 @@
               <label class="block text-sm font-medium text-gray-700">Phone Number</label>
               <div class="mt-1">
                 <input 
-                  type="tel" 
+                  type="text" 
                   v-model="editForm.phoneNumber"
                   placeholder="e.g. 0812345678"
-                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md px-4 py-2 border"
+                  class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm rounded-md px-4 py-2 border transition-colors"
+                  :class="errors.phoneNumber ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'"
                 />
+              </div>
+              <p v-if="errors.phoneNumber" class="mt-1.5 text-xs text-red-600 font-bold flex items-center">
+                <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                {{ errors.phoneNumber }}
+              </p>
+            </div>
+
+            <!-- Account Role Selection -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Marketplace Role</label>
+              <div class="flex gap-4">
+                <label class="flex-1 flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all"
+                       :class="editForm.role === 'buyer' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50 shadow-sm'">
+                  <input type="radio" value="buyer" v-model="editForm.role" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                  <span class="ml-3 block text-sm font-bold" :class="editForm.role === 'buyer' ? 'text-blue-800' : 'text-gray-700'">
+                    🛍️ Buyer
+                    <span class="block text-xs font-normal text-gray-500 mt-0.5">I want to bid and buy phones</span>
+                  </span>
+                </label>
+                <label class="flex-1 flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all"
+                       :class="editForm.role === 'seller' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:bg-gray-50 shadow-sm'">
+                  <input type="radio" value="seller" v-model="editForm.role" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
+                  <span class="ml-3 block text-sm font-bold" :class="editForm.role === 'seller' ? 'text-purple-800' : 'text-gray-700'">
+                    🏬 Seller
+                    <span class="block text-xs font-normal text-gray-500 mt-0.5">I want to list and sell phones</span>
+                  </span>
+                </label>
               </div>
             </div>
 
@@ -100,15 +132,22 @@ const isSaving = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 
-const editForm = ref({
+const errors = ref({
   displayName: '',
   phoneNumber: ''
+})
+
+const editForm = ref({
+  displayName: '',
+  phoneNumber: '',
+  role: 'buyer'
 })
 
 const loadData = () => {
   if (authStore.profile) {
     editForm.value.displayName = authStore.profile.displayName || ''
     editForm.value.phoneNumber = authStore.profile.phoneNumber || ''
+    editForm.value.role = authStore.profile.role || 'buyer'
   }
 }
 
@@ -120,7 +159,29 @@ onMounted(() => {
   }
 })
 
+const validateForm = () => {
+  let isValid = true
+  errors.value = { displayName: '', phoneNumber: '' }
+  
+  if (!editForm.value.displayName || editForm.value.displayName.trim().length < 3) {
+    errors.value.displayName = 'Display Name must be at least 3 characters.'
+    isValid = false
+  }
+  
+  if (editForm.value.phoneNumber) {
+    const cleanPhone = editForm.value.phoneNumber.trim()
+    const phoneRegex = /^[0-9]{9,10}$/
+    if (!phoneRegex.test(cleanPhone)) {
+      errors.value.phoneNumber = 'Phone number must be exactly 9-10 digits without spaces or dashes.'
+      isValid = false
+    }
+  }
+  return isValid
+}
+
 const saveProfile = async () => {
+  if (!validateForm()) return
+
   isSaving.value = true
   successMessage.value = ''
   errorMessage.value = ''
@@ -128,7 +189,8 @@ const saveProfile = async () => {
   try {
     await authStore.updateProfileData({
       displayName: editForm.value.displayName,
-      phoneNumber: editForm.value.phoneNumber
+      phoneNumber: editForm.value.phoneNumber,
+      role: editForm.value.role
     })
     successMessage.value = 'Profile updated successfully!'
     setTimeout(() => successMessage.value = '', 3000)

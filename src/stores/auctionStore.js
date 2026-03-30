@@ -13,14 +13,21 @@ export const useAuctionStore = defineStore('auction', () => {
       ['OnePlus 11', 'OnePlus 10 Pro', 'OnePlus Nord N20', 'OnePlus 9', 'OnePlus 8T'],
       ['Xperia 1 IV', 'Xperia 5 III', 'Xperia 10 IV', 'Xperia PRO-I', 'Xperia 1 III']
     ];
-    const images = [
-      'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=800'
+    const imageSets = [
+      ['https://images.unsplash.com/photo-1632661674596-df8be070a5c5?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&q=80&w=800'],
+      ['https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=800'],
+      ['https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=800'],
+      ['https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=800'],
+      ['https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=800']
     ];
     const conditions = ['Like New', 'Excellent', 'Good', 'Fair', 'Refurbished'];
+    const defectSamples = [
+      'Minor scratch on the bottom right corner.',
+      'Battery health at 84%. Light wear around the charging port.',
+      'None. Pristine condition with screen protector installed from day one.',
+      'Small dent on the top bezel. Does not affect screen or usability.',
+      'Replaced screen with genuine parts. Minor software lag occasionally.'
+    ];
     
     let prods = [];
     let hists = {};
@@ -36,11 +43,12 @@ export const useAuctionStore = defineStore('auction', () => {
           brand: brands[i],
           model: models[i][j],
           condition: conditions[Math.floor(Math.random() * conditions.length)],
+          defects: defectSamples[Math.floor(Math.random() * defectSamples.length)],
           basePrice: basePrice,
           activePrice: basePrice,
           leadingBidder: 'Start Price',
           status: 'available',
-          imageUrl: images[Math.floor(Math.random() * images.length)]
+          images: imageSets[Math.floor(Math.random() * imageSets.length)]
         });
         hists[id] = [];
       }
@@ -53,7 +61,7 @@ export const useAuctionStore = defineStore('auction', () => {
   const defaultHistories = mockData.hists;
 
   // --- 2. HYDRATE FROM LOCAL STORAGE (To survive F5 Refresh) ---
-  const storedState = localStorage.getItem('rephonex_auction_state_v2')
+  const storedState = localStorage.getItem('rephonex_auction_state_v3')
   let initialProducts = defaultProducts
   let initialHistories = defaultHistories
 
@@ -61,13 +69,7 @@ export const useAuctionStore = defineStore('auction', () => {
     try {
       const parsed = JSON.parse(storedState)
       if (parsed.products) {
-        initialProducts = parsed.products.map(p => {
-          if (!p.imageUrl) {
-            const def = defaultProducts.find(d => d.id === p.id)
-            if (def) p.imageUrl = def.imageUrl
-          }
-          return p
-        })
+        initialProducts = parsed.products
       }
       if (parsed.bidHistories) initialHistories = parsed.bidHistories
     } catch(e) { 
@@ -81,7 +83,7 @@ export const useAuctionStore = defineStore('auction', () => {
   
   // Save to LocalStorage whenever these arrays mutate
   watch([products, bidHistories], () => {
-    localStorage.setItem('rephonex_auction_state_v2', JSON.stringify({
+    localStorage.setItem('rephonex_auction_state_v3', JSON.stringify({
       products: products.value,
       bidHistories: bidHistories.value
     }))
@@ -177,9 +179,27 @@ export const useAuctionStore = defineStore('auction', () => {
 
   // Helper method to clear the presenter's cache back to default
   const resetAuctionState = () => {
-    localStorage.removeItem('rephonex_auction_state_v2')
+    localStorage.removeItem('rephonex_auction_state_v3')
     products.value = [...defaultProducts]
     bidHistories.value = JSON.parse(JSON.stringify(defaultHistories)) // deep copy
+  }
+
+  // --- 6. SELLER CRUD METHODS ---
+  const addProduct = (productData) => {
+    const newId = 'prod_' + Date.now();
+    products.value.unshift({
+      id: newId,
+      ...productData,
+      activePrice: productData.basePrice,
+      leadingBidder: 'Start Price',
+      status: 'available'
+    });
+    bidHistories.value[newId] = [];
+  }
+
+  const deleteProduct = (productId) => {
+    products.value = products.value.filter(p => p.id !== productId)
+    delete bidHistories.value[productId]
   }
 
   return { 
@@ -190,6 +210,8 @@ export const useAuctionStore = defineStore('auction', () => {
     placeBid, 
     startSimulation, 
     stopSimulation,
-    resetAuctionState
+    resetAuctionState,
+    addProduct,
+    deleteProduct
   }
 })

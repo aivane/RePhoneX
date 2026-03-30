@@ -25,6 +25,13 @@
             </template>
             
             <template v-else-if="authStore.user">
+              <!-- Wallet Balance Badge -->
+              <div class="hidden sm:flex items-center px-4 py-1.5 bg-emerald-50 rounded-full border border-emerald-200 shadow-inner mr-2 text-emerald-800 transition-all hover:shadow-md hover:bg-emerald-100 cursor-default">
+                <svg class="w-4 h-4 mr-1.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
+                <span class="text-[10px] font-bold uppercase tracking-widest mr-1 opacity-80">Bal:</span>
+                <span class="text-sm font-black tracking-tight">${{ (authStore.profile?.balance || 2000).toLocaleString() }}</span>
+              </div>
+
               <div class="relative group cursor-pointer flex items-center space-x-3 py-2">
                 <img v-if="authStore.profile?.photoURL" :src="authStore.profile.photoURL" alt="User" class="h-9 w-9 rounded-full border-2 border-white shadow-sm object-cover bg-gray-100">
                 <div v-else class="h-9 w-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold shadow-sm border-2 border-white">
@@ -41,6 +48,10 @@
                   <router-link to="/profile" class="relative block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-semibold transition">
                     <svg class="inline w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     Edit Profile
+                  </router-link>
+                  <router-link v-if="authStore.profile?.role === 'seller'" to="/seller/dashboard" class="relative block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-purple-600 font-semibold transition border-t border-gray-50">
+                    <svg class="inline w-4 h-4 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Seller Dashboard
                   </router-link>
                   <div class="border-t border-gray-100 my-1"></div>
                   <button @click="authStore.logout" class="relative w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold transition">

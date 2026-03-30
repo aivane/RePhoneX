@@ -19,7 +19,7 @@
           
           <!-- Image Section -->
           <div class="h-48 w-full bg-gray-50 relative overflow-hidden">
-             <img v-if="product.imageUrl" :src="product.imageUrl" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" :alt="product.model" />
+             <img v-if="product.images && product.images.length > 0" :src="product.images[0]" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" :alt="product.model" />
              <div v-else class="flex h-full items-center justify-center text-gray-300">
                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
              </div>

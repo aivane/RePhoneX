@@ -28,17 +28,23 @@ export const useAuthStore = defineStore('auth', () => {
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
           role: selectedRole, // Set role strictly on first login
+          balance: 2000,      // Pre-fund the virtual wallet with $2000
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }
         await setDoc(userRef, newProfile)
         profile.value = newProfile
       } else {
-        // Exists - update the updatedAt timestamp
-        await updateDoc(userRef, {
-          updatedAt: serverTimestamp()
-        })
-        profile.value = userSnap.data()
+        const currentData = userSnap.data()
+        
+        // Exists - update the updatedAt timestamp and ensure balance exists
+        const updates = { updatedAt: serverTimestamp() }
+        if (currentData.balance === undefined) {
+          updates.balance = 2000
+        }
+        
+        await updateDoc(userRef, updates)
+        profile.value = { ...currentData, ...updates }
       }
       
       user.value = firebaseUser
@@ -72,7 +78,10 @@ export const useAuthStore = defineStore('auth', () => {
           const userRef = doc(db, 'users', firebaseUser.uid)
           const userSnap = await getDoc(userRef)
           if (userSnap.exists()) {
-            profile.value = userSnap.data()
+            const data = userSnap.data()
+            // Legacy schema user fallback pattern
+            if (data.balance === undefined) data.balance = 2000
+            profile.value = data
           }
         } catch (error) {
           console.error("Error fetching user profile:", error)
@@ -85,20 +94,24 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  async function updateProfileData({ displayName, phoneNumber }) {
+  async function updateProfileData({ displayName, phoneNumber, role }) {
     if (!user.value) throw new Error("Not logged in")
     try {
       loading.value = true
       const userRef = doc(db, 'users', user.value.uid)
-      await updateDoc(userRef, {
+      const updates = {
         displayName: displayName,
         phoneNumber: phoneNumber || null,
         updatedAt: serverTimestamp()
-      })
+      }
+      if (role) updates.role = role
+      
+      await updateDoc(userRef, updates)
       
       if (profile.value) {
         profile.value.displayName = displayName
         profile.value.phoneNumber = phoneNumber || null
+        if (role) profile.value.role = role
       }
     } catch (error) {
       console.error('Error updating profile:', error)

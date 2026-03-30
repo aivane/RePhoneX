@@ -12,27 +12,48 @@
         <!-- Left Column: Image & Specs -->
         <div class="flex-1 lg:border-r border-gray-100">
           
-          <!-- Image Header -->
-          <div class="h-64 sm:h-96 w-full bg-gray-100 relative group">
-             <img v-if="product.imageUrl" :src="product.imageUrl" class="w-full h-full object-cover" :alt="product.model" />
-             <div v-else class="flex h-full items-center justify-center text-gray-300">
-               <svg class="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+          <!-- Image Header & Gallery -->
+          <div class="w-full flex flex-col group p-6 sm:p-10 pb-0">
+             <div class="h-64 sm:h-96 w-full rounded-2xl relative overflow-hidden bg-gray-50 border border-gray-100 shadow-sm flex items-center justify-center">
+               <img v-if="product.images && product.images.length > 0" :src="activeImage" class="w-full h-full object-contain" :alt="product.model" />
+               <div v-else class="flex h-full items-center justify-center text-gray-300">
+                 <svg class="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+               </div>
+               
+               <!-- Absolute Spec Badges -->
+               <div class="absolute top-4 left-4 flex gap-2">
+                 <span class="bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-black text-gray-800 uppercase shadow-sm border border-white/50 tracking-wider">
+                   {{ product.brand }}
+                 </span>
+                 <span class="bg-blue-600/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-black text-white uppercase shadow-sm border border-blue-500/50 tracking-wider">
+                   {{ product.condition }}
+                 </span>
+               </div>
              </div>
              
-             <!-- Absolute Spec Badges -->
-             <div class="absolute top-4 left-4 flex gap-2">
-               <span class="bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-black text-gray-800 uppercase shadow-sm border border-white/50 tracking-wider">
-                 {{ product.brand }}
-               </span>
-               <span class="bg-blue-600/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-black text-white uppercase shadow-sm border border-blue-500/50 tracking-wider">
-                 {{ product.condition }}
-               </span>
+             <!-- Thumbnails -->
+             <div v-if="product.images && product.images.length > 1" class="flex gap-4 mt-6 overflow-x-auto pb-2 px-1 scrollbar-hide">
+               <button v-for="(img, idx) in product.images" :key="idx" @click="activeImage = img"
+                 class="h-20 w-20 flex-shrink-0 rounded-xl overflow-hidden border-2 transition-all bg-gray-50"
+                 :class="activeImage === img ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100'">
+                 <img :src="img" class="w-full h-full object-cover" />
+               </button>
              </div>
           </div>
           
           <div class="p-8 sm:p-12">
             <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">{{ product.model }}</h1>
             
+            <div v-if="product.defects" class="mb-8 bg-yellow-50 border border-yellow-200 rounded-2xl p-5">
+              <h4 class="text-xs font-black text-yellow-800 uppercase tracking-widest mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                Condition & Defect Notes
+              </h4>
+              <p class="text-yellow-900 font-medium text-sm leading-relaxed">
+                {{ product.defects }}
+              </p>
+            </div>
+
             <div class="flex items-center mb-8 border-b border-gray-100 pb-6">
                <div class="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg mr-3 shadow-inner">
                  {{ product.sellerName ? product.sellerName.charAt(0) : 'V' }}
@@ -89,7 +110,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuctionStore } from '../stores/auctionStore'
 import BiddingPanel from '../components/product/BiddingPanel.vue'
@@ -98,4 +119,12 @@ const route = useRoute()
 const auctionStore = useAuctionStore()
 
 const product = computed(() => auctionStore.products.find(p => p.id === route.params.id))
+
+const activeImage = ref('')
+
+watch(product, (newVal) => {
+  if (newVal && newVal.images && newVal.images.length > 0) {
+    activeImage.value = newVal.images[0]
+  }
+}, { immediate: true })
 </script>
