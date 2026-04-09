@@ -130,6 +130,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function updateProfileData({ displayName, phoneNumber }) {
     if (!user.value) throw new Error("Not logged in")
+    
+    // Core Validation
+    if (!displayName || displayName.trim().length < 3 || displayName.trim().length > 50) {
+      throw new Error("Display Name must be between 3 and 50 characters.")
+    }
+    
+    if (phoneNumber && !/^[\d\+\-\(\)\s]{8,20}$/.test(phoneNumber)) {
+      throw new Error("Invalid phone number format.")
+    }
+
     try {
       loading.value = true
       const userRef = doc(db, 'users', user.value.uid)

@@ -224,12 +224,12 @@
           <div class="grid grid-cols-2 gap-5">
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-1">Brand</label>
-              <input type="text" v-model="form.brand" placeholder="e.g. Apple" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.brand ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
+              <input type="text" v-model="form.brand" maxlength="50" placeholder="e.g. Apple" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.brand ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
               <p v-if="errors.brand" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.brand }}</p>
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-1">Model</label>
-              <input type="text" v-model="form.model" placeholder="e.g. iPhone 13 Pro" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.model ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
+              <input type="text" v-model="form.model" maxlength="50" placeholder="e.g. iPhone 13 Pro" class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.model ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
               <p v-if="errors.model" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.model }}</p>
             </div>
           </div>
@@ -258,7 +258,7 @@
 
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-1">Starting Price ($)</label>
-            <input type="number" v-model="form.basePrice" min="1" :disabled="editProductId" class="w-full rounded-xl px-4 py-2 border transition-colors disabled:opacity-50 disabled:bg-gray-100" :class="errors.basePrice ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
+            <input type="number" v-model="form.basePrice" min="1" max="100000" :disabled="editProductId" class="w-full rounded-xl px-4 py-2 border transition-colors disabled:opacity-50 disabled:bg-gray-100" :class="errors.basePrice ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'">
             <p v-if="errors.basePrice" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.basePrice }}</p>
           </div>
           
@@ -306,7 +306,7 @@
           
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-1">Condition & Defect Notes</label>
-            <textarea v-model="form.defects" rows="3" placeholder="Describe any scratches, battery health, or accessories included..." class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.defects ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'"></textarea>
+            <textarea v-model="form.defects" rows="3" maxlength="1000" placeholder="Describe any scratches, battery health, or accessories included..." class="w-full rounded-xl px-4 py-2 border transition-colors" :class="errors.defects ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'"></textarea>
             <p v-if="errors.defects" class="mt-1.5 text-xs text-red-600 font-bold">{{ errors.defects }}</p>
           </div>
           
@@ -360,7 +360,7 @@ import { ref, computed } from 'vue'
 import { useAuctionStore } from '../stores/auctionStore'
 import { useAuthStore } from '../stores/auth'
 import { db } from '../services/firebase'
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, updateDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
 
 const auctionStore = useAuctionStore()
 const authStore = useAuthStore()
@@ -437,41 +437,75 @@ const executeConfirm = async () => {
   isProcessingTx.value = true
   
   if (action === 'accept') {
-    auctionStore.resolveAuction(product.id, 'accepted')
-    
-    // Process Financials
     try {
       if (product.leadingBidder !== 'Start Price' && product.leadingBidder !== 'You') {
-         // Deduct from Buyer
-         const usersRef = collection(db, 'users')
-         const q = query(usersRef, where('displayName', '==', product.leadingBidder))
-         const snapshot = await getDocs(q)
-         if (!snapshot.empty) {
-            const buyerDoc = snapshot.docs[0]
-            const currentBalance = buyerDoc.data().balance || 2000
-            await updateDoc(doc(db, 'users', buyerDoc.id), {
-               balance: Math.max(0, currentBalance - product.activePrice)
-            })
-            console.log("Successfully deducted balance from buyer.")
+         // Step 1: Query the buyer doc by displayName (if we don't have uid, we must fetch it first outside txn)
+         let buyerDocRef = null;
+         
+         if (product.leadingBidderUid) {
+           buyerDocRef = doc(db, 'users', product.leadingBidderUid);
+         } else {
+           const usersRef = collection(db, 'users');
+           const q = query(usersRef, where('displayName', '==', product.leadingBidder));
+           const snapshot = await getDocs(q);
+           if (!snapshot.empty) {
+             buyerDocRef = doc(db, 'users', snapshot.docs[0].id);
+           }
          }
 
-         // Add to Seller
-         if(authStore.user) {
-           const sellerRef = doc(db, 'users', authStore.user.uid)
-           const newSellerBalance = (authStore.profile?.balance || 0) + product.activePrice
-           const newCompletedDeals = (authStore.profile?.completedDeals || 0) + 1
-           await updateDoc(sellerRef, { balance: newSellerBalance, completedDeals: newCompletedDeals })
-           
-           // Update local authStore profile state so UI updates
-           if(authStore.profile) {
-             authStore.profile.balance = newSellerBalance
-             authStore.profile.completedDeals = newCompletedDeals
-           }
-           console.log("Successfully added balance and completed deal to seller.")
+         if (!buyerDocRef || !authStore.user) {
+            alert("Could not locate buyer or you are not logged in.");
+            isProcessingTx.value = false;
+            return;
          }
+
+         const sellerDocRef = doc(db, 'users', authStore.user.uid);
+         const productDocRef = doc(db, 'products', product.id);
+
+         // Atomic Transaction
+         await runTransaction(db, async (transaction) => {
+            const buyerSnap = await transaction.get(buyerDocRef);
+            const sellerSnap = await transaction.get(sellerDocRef);
+            
+            if (!buyerSnap.exists()) throw new Error("Buyer profile not found.");
+            if (!sellerSnap.exists()) throw new Error("Your profile not found.");
+
+            const buyerBalance = buyerSnap.data().balance || 0;
+            if (buyerBalance < product.activePrice) {
+               throw new Error("Transaction Failed: Buyer has insufficient funds.");
+            }
+
+            // Calculations
+            const newBuyerBalance = buyerBalance - product.activePrice;
+            const sellerCompletedDeals = (sellerSnap.data().completedDeals || 0) + 1;
+            const sellerBalance = (sellerSnap.data().balance || 0) + product.activePrice;
+
+            // Updates
+            transaction.update(buyerDocRef, { balance: newBuyerBalance });
+            transaction.update(sellerDocRef, { 
+              balance: sellerBalance, 
+              completedDeals: sellerCompletedDeals 
+            });
+            transaction.update(productDocRef, { 
+              resolution: 'accepted',
+              updatedAt: serverTimestamp() 
+            });
+            
+            // Local state update
+            if(authStore.profile) {
+              authStore.profile.balance = sellerBalance;
+              authStore.profile.completedDeals = sellerCompletedDeals;
+            }
+         });
+         
+         console.log("Successfully completed atomic transaction (deduct buyer, add to seller).")
+      } else {
+        // Fallback if no buyer but accepted... (Should not happen normally)
+        auctionStore.resolveAuction(product.id, 'accepted');
       }
     } catch(e) {
-      console.warn("Could not process financials:", e)
+      console.error("Could not process financials:", e);
+      alert(e.message || "Financial transaction failed.");
     }
   } else if (action === 'reject') {
     auctionStore.resolveAuction(product.id, 'rejected')
@@ -617,8 +651,8 @@ const validateForm = () => {
     isValid = false
   }
   
-  if (!form.value.basePrice || form.value.basePrice <= 0) {
-    errors.value.basePrice = 'Starting Price must be greater than $0.'
+  if (!form.value.basePrice || form.value.basePrice <= 0 || form.value.basePrice > 100000) {
+    errors.value.basePrice = 'Starting Price must be between $1 and $100,000.'
     isValid = false
   }
   

@@ -71,7 +71,9 @@
           <div class="flex items-center">
             <span class="bg-gray-800 text-gray-400 px-4 py-3 rounded-l-xl border border-r-0 font-bold" :class="bidError ? 'border-red-500 text-red-400' : 'border-gray-700'">$</span>
             <input 
-              type="number" 
+              type="number"
+              min="1"
+              max="100000"
               v-model="customBid" 
               class="w-full bg-gray-800 text-white px-4 py-3 border transition-colors outline-none font-mono text-lg"
               :class="bidError ? 'border-red-500 focus:border-red-400' : 'border-gray-700 focus:border-blue-500'"

@@ -56,8 +56,19 @@ export const useAuctionStore = defineStore('auction', () => {
       const currentMs = Date.now()
       
       // Validation
+      if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) throw new Error("Invalid bid amount")
       if (product.endsAt <= currentMs) throw new Error("Auction has ended")
       if (amount <= product.activePrice && product.leadingBidder !== 'Start Price') throw new Error("Bid must be higher than current price")
+      
+      // Live wallet balance check from Firestore
+      const userRef = doc(db, 'users', uid)
+      const userSnap = await getDoc(userRef)
+      if (!userSnap.exists()) throw new Error("User profile not found")
+      
+      const latestBalance = userSnap.data().balance || 0
+      if (latestBalance < amount) {
+        throw new Error(`Insufficient funds. Your live balance is $${latestBalance.toLocaleString()}`)
+      }
       
       let newEndsAt = product.endsAt
       // Anti-Sniper Logic

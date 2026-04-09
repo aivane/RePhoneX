@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // products collection rules
+    match /products/{productId} {
+      // Anyone can read products
+      allow read: if true;
+      
+      // Creating a product: User must be logged in, and setting sellerUid to their own ID.
+      // We also enforce basic required fields (brand, model, condition).
+      allow create: if request.auth != null 
+                    && request.resource.data.sellerUid == request.auth.uid
+                    && request.resource.data.keys().hasAll(['brand', 'model', 'condition', 'activePrice']);
+      
+      // Updating a product:
+      // - The Seller can update or resolve it.
+      // - Buyers can only update specific fields to place a bid (bids, activePrice, leadingBidder, endsAt, etc)
+      allow update: if request.auth != null && (
+        // Condition A: Seller updating their own product
+        resource.data.sellerUid == request.auth.uid
+        // Condition B: Buyer placing a valid higher bid
+        || (
+          request.resource.data.sellerUid == resource.data.sellerUid // seller unchanged
+          && request.resource.data.activePrice > resource.data.activePrice // bid is higher
+          && request.resource.data.leadingBidderUid == request.auth.uid // bidder is setting themselves as leader
+          && resource.data.resolution == null // auction not already resolved
+        )
+      );
+
+      // Only seller can delete the document
+      allow delete: if request.auth != null && resource.data.sellerUid == request.auth.uid;
+    }
+    
+    // users collection rules
+    match /users/{userId} {
+      // Users can only read and write their own profile
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Constraints on wallet balance:
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   // Ensure balance doesn't drop below 0 if it exists
+                   && (!request.resource.data.keys().hasAny(['balance']) || request.resource.data.balance >= 0);
+    }
+  }
+}
